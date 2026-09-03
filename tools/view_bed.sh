@@ -3,9 +3,10 @@
 # default camera angle already applied — no manual console commands needed.
 #
 # Usage:
-#   ./view_bed.sh                 # just reopen the existing output file
-#   ./view_bed.sh --rebuild        # regenerate from params.py first
-#   ./view_bed.sh /path/to/other.FCStd   # open a different file
+#   ./view_bed.sh                          # just reopen the existing output file
+#   ./view_bed.sh --rebuild                 # regenerate from params.py first
+#   STYLE=2 ./view_bed.sh --rebuild         # regenerate with a params.py style preset
+#   ./view_bed.sh /path/to/other.FCStd       # open a different file
 
 set -e
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"       # tools/
