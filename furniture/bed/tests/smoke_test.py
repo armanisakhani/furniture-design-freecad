@@ -21,8 +21,8 @@ import os
 import FreeCAD as App
 import Part
 
-OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
-OUTPUT_FILE = os.path.join(OUTPUT_DIR, "phase0_smoke_test.FCStd")
+OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "output")
+OUTPUT_FILE = os.path.join(OUTPUT_DIR, "smoke_test.FCStd")
 
 # Round placeholder dimensions, just to make X vs Y vs Z visually obvious.
 BOX_WIDTH = 400.0   # X

@@ -1,5 +1,7 @@
 # FreeCAD Parametric MDF Furniture Project
 
+> Original project vision/spec, kept as a historical reference — not a live status doc. For current status see `roadmap.md` (bed design); a new furniture design gets its own `roadmap-<name>.md`. For current terminology see `CONTEXT.md`.
+
 I want to build a parametric furniture-design workflow in FreeCAD using Python.
 
 ## Main goal

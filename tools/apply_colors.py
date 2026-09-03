@@ -13,7 +13,7 @@ that gap for whatever document is currently active in the GUI.
 
 Usage: open your .FCStd file normally (open -a FreeCAD ...), then in the
 Python console run:
-    exec(open("/Users/divar/design/bedroom/apply_colors.py").read())
+    exec(open("/Users/divar/design/bedroom/tools/apply_colors.py").read())
 """
 
 import FreeCAD as App

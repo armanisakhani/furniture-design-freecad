@@ -10,18 +10,28 @@ actually regenerates — that's the point of using FeaturePython over a
 one-shot script.
 
 Note: freecadcmd runs a script with __name__ set to the script's filename,
-not "__main__" — call main() unconditionally (see phase0_smoke_test.py).
+not "__main__" — call main() unconditionally (see smoke_test.py).
 """
 
 import os
+import sys
+
+# freecadcmd doesn't know this project's own package layout — put this
+# furniture module's own directory (for params/box/bed) and the repo root
+# (for core/) on sys.path before any project-local import.
+_BED_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_ROOT_DIR = os.path.dirname(os.path.dirname(_BED_DIR))
+for _p in (_ROOT_DIR, _BED_DIR):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 import FreeCAD as App
 
 import params
-from panel import create_panel
+from core.panel import create_panel
 
-OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
-OUTPUT_FILE = os.path.join(OUTPUT_DIR, "phase2_panel_test.FCStd")
+OUTPUT_DIR = os.path.join(_BED_DIR, "output")
+OUTPUT_FILE = os.path.join(OUTPUT_DIR, "panel_test.FCStd")
 
 
 def main():

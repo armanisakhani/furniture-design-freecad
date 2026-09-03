@@ -8,14 +8,16 @@
 #   ./view_bed.sh /path/to/other.FCStd   # open a different file
 
 set -e
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"       # tools/
+ROOT="$(dirname "$DIR")"                                  # repo root
+BED_DIR="$ROOT/furniture/bed"
 FREECADCMD="/Applications/FreeCAD.app/Contents/Resources/bin/freecadcmd"
 FREECAD_BIN="/Applications/FreeCAD.app/Contents/MacOS/FreeCAD"
-FILE="$DIR/output/phase6_bed_test.FCStd"
+FILE="$BED_DIR/output/bed_test.FCStd"
 
 if [ "$1" == "--rebuild" ]; then
     echo "Rebuilding from params.py..."
-    "$FREECADCMD" "$DIR/phase6_bed_test.py"
+    "$FREECADCMD" "$BED_DIR/tests/bed_test.py"
     shift
 fi
 

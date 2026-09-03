@@ -255,21 +255,41 @@ BOX_SHELL_X_MIN = MDF_THICKNESS
 # توی دهنه‌ی باکس شل می‌شینه — با دیتاشیت ریل واقعی چک بشه.)
 DRAWER_TOP_REVEAL_GAP = 6  # TBD: matches ball-bearing side-mount convention, confirm w/ datasheet
 
-# Top panel's own X footprint and start position — the one place that
-# actually varies by DRAWER_OVERLAY_STYLE (see above): flush with
-# FRAME_WIDTH (capping over the drawer from above) in "box_over_drawer", or
-# matching the rest of the shell (BOX_WIDTH / BOX_SHELL_X_MIN) in
-# "rail_above_drawer", where the unmodeled rail frame does the reaching
-# instead.
-# (فوت‌پرینت X و نقطه‌ی شروع خود صفحه‌ی بالایی — تنها جایی که واقعاً بسته به
-# DRAWER_OVERLAY_STYLE فرق می‌کنه (بالا رو نگاه کن): هم‌تراز FRAME_WIDTH (از
-# بالا روی کشو رو می‌پوشونه) توی "box_over_drawer"، یا هم‌تراز بقیه‌ی بدنه
-# (BOX_WIDTH / BOX_SHELL_X_MIN) توی "rail_above_drawer"، جایی که فریم ریل
-# مدل‌نشده به‌جاش بیرون می‌زنه.)
-BOX_TOP_PANEL_WIDTH = (
-    FRAME_WIDTH if DRAWER_OVERLAY_STYLE == "box_over_drawer" else BOX_WIDTH
-)
-BOX_TOP_X_MIN = 0 if DRAWER_OVERLAY_STYLE == "box_over_drawer" else BOX_SHELL_X_MIN
+# Everything that varies by DRAWER_OVERLAY_STYLE, computed together here —
+# one seam, one branch per style — instead of re-branching on the style
+# string at each dependent call site (box.py used to carry 2 of its own
+# copies of this check). See box.py's module docstring for the physical
+# reasoning behind each style.
+def _drawer_overlay_geometry(style):
+    if style == "box_over_drawer":
+        return dict(
+            top_panel_width=FRAME_WIDTH,
+            top_x_min=0,
+            drawer_height_reduction=0,
+            face_top_ref_z=BOX_HEIGHT - MDF_THICKNESS,
+        )
+    elif style == "rail_above_drawer":
+        return dict(
+            top_panel_width=BOX_WIDTH,
+            top_x_min=BOX_SHELL_X_MIN,
+            drawer_height_reduction=MDF_THICKNESS,
+            face_top_ref_z=BOX_HEIGHT,
+        )
+    raise ValueError(f"Unknown DRAWER_OVERLAY_STYLE: {style!r}")
+
+
+_overlay_geometry = _drawer_overlay_geometry(DRAWER_OVERLAY_STYLE)
+# Top panel's X footprint/start: flush with FRAME_WIDTH (caps the drawer
+# from above) in "box_over_drawer", or matching the shell inset in
+# "rail_above_drawer" (unmodeled rail frame reaches out instead).
+BOX_TOP_PANEL_WIDTH = _overlay_geometry["top_panel_width"]
+BOX_TOP_X_MIN = _overlay_geometry["top_x_min"]
+# Height the drawer carcass gives up for the unmodeled rail-mount frame in
+# "rail_above_drawer" (0 in "box_over_drawer"). Used by box.py.
+DRAWER_HEIGHT_REDUCTION = _overlay_geometry["drawer_height_reduction"]
+# Z reference the Face's top edge measures DRAWER_TOP_REVEAL_GAP down from.
+# Used by box.py.
+DRAWER_FACE_TOP_REF_Z = _overlay_geometry["face_top_ref_z"]
 
 # Drawer slide rail. Reference notes a 600 or 650mm nominal rail; exact
 # model/brand and its datasheet clearance are not chosen yet.

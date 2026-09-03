@@ -1,0 +1,7 @@
+[MASTER]
+# FreeCAD/Part/FreeCADGui/pivy are compiled C extensions with no static
+# stubs. Actually importing them for pylint's runtime introspection
+# (extension-pkg-allow-list) crashes outside FreeCAD's own launch
+# environment, so instead just silence the resulting false "no-member"
+# warnings without ever importing these modules.
+generated-members=FreeCAD.*,Part.*,FreeCADGui.*,pivy.*

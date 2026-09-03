@@ -1,8 +1,6 @@
-# Roadmap — Parametric Bed / Drawer-Box System
+# Roadmap — Bed / Drawer-Box System (`furniture/bed/`)
 
-This is the working, step-by-step execution plan. `plan.md` stays as the original
-project vision/onboarding doc. This file is what we actually follow, phase by
-phase, and gets updated as decisions are made and measurements come in.
+This is the working, step-by-step execution plan for the bed design specifically. `plan.md` stays as the original project vision/onboarding doc. This file is what we actually follow, phase by phase, and gets updated as decisions are made and measurements come in. A future furniture design (bookshelf, shelving, ...) gets its own `docs/roadmap-<name>.md` rather than a section here — this file stays scoped to the bed.
 
 Status legend: `[ ]` not started, `[~]` in progress, `[x]` done.
 
@@ -67,7 +65,7 @@ works end to end on your Mac. No project geometry yet, just a smoke test.
   /Applications/FreeCAD.app/Contents/Resources/bin/freecadcmd path/to/script.py
   open -a FreeCAD path/to/output.FCStd   # to inspect the result visually
   ```
-* [x] Wrote and ran the smoke-test script: [phase0_smoke_test.py](phase0_smoke_test.py).
+* [x] Wrote and ran the smoke-test script: [smoke_test.py](../furniture/bed/tests/smoke_test.py).
   It creates one `Part::Box` (400×300×18, X×Y×Z) and saves it to
   `output/phase0_smoke_test.FCStd`. Ran successfully; opened in the FreeCAD
   GUI and visually confirmed (box visible, selectable, default gray solid —
@@ -82,7 +80,7 @@ works end to end on your Mac. No project geometry yet, just a smoke test.
 Purpose: agree on and encode every design "knob" in one place, with no
 geometry logic mixed in, before writing a single panel.
 
-Deliverable: [params.py](params.py) — a plain module (no FreeCAD import, no
+Deliverable: [params.py](../furniture/bed/params.py) — a plain module (no FreeCAD import, no
 geometry), grouped into Mattress / Frame / Drawer / Skirt / Support frame /
 Material. `FRAME_LENGTH`/`FRAME_WIDTH` are derived from the mattress size
 plus a gap, not set directly. Every value not yet confirmed is marked
@@ -143,8 +141,8 @@ updating every module that imports it.
   bottom panel) and confirm it opens correctly and reports correct
   dimensions/volume in FreeCAD.
 
-* [x] `Panel` implemented in [panel.py](panel.py), tested by
-  [phase2_panel_test.py](phase2_panel_test.py) (generates the box top panel
+* [x] `Panel` implemented in [panel.py](../core/panel.py), tested by
+  [panel_test.py](../furniture/bed/tests/panel_test.py) (generates the box top panel
   from `params.py`: `FRAME_LENGTH` × `BOX_TOP_PANEL_WIDTH` ×
   `MDF_THICKNESS`). Ran headlessly via `freecadcmd`; volume matched exactly,
   and a separate check confirmed changing `Thickness` + `doc.recompute()`
@@ -186,8 +184,8 @@ updating every module that imports it.
   box's internal opening — still without rail clearance math (placeholder
   gap).
 
-* [x] Implemented in [box.py](box.py) (`create_box()`), tested by
-  [phase3_box_test.py](phase3_box_test.py) — builds one full Box (6 shell
+* [x] Implemented in [box.py](../furniture/bed/box.py) (`create_box()`), tested by
+  [box_test.py](../furniture/bed/tests/box_test.py) — builds one full Box (6 shell
   panels + 2 Drawer_box carcasses × 5 = 16 panels) and checks bounding
   boxes. Ran headlessly; overall footprint matches `FRAME_WIDTH ×
   BOX_LENGTH × BOX_HEIGHT` exactly, nothing overlaps. Visually confirmed in
@@ -315,7 +313,7 @@ updating every module that imports it.
 * Add the leg/support frame as at least a simplified reference geometry.
 
 * [~] Started early, out of order (user wanted a quick look at the whole
-  bed): [bed.py](bed.py)'s `create_bed()` places all `BOX_COUNT` boxes side
+  bed): [bed.py](../furniture/bed/bed.py)'s `create_bed()` places all `BOX_COUNT` boxes side
   by side (just calling `create_box()` per index — its `y_offset` default
   was already built for exactly this reuse, back in Phase 3) plus a plain,
   undyed `Part::Box` mattress placeholder on top (not a `Panel`, not part
@@ -384,7 +382,7 @@ updating every module that imports it.
     a box's end-wall `visible`/`stock_source` depends on its position in
     the bed (see Phase 3 entry) — by adding a visible Face on top, rather
     than by changing the hidden structural wall's own properties.
-  * Tested by [phase6_bed_test.py](phase6_bed_test.py): 56 panels (3×18 +
+  * Tested by [bed_test.py](../furniture/bed/tests/bed_test.py): 56 panels (3×18 +
     2 bed-level — `MattressStop` + `EndFaceFoot`), overall bounding box
     matches expectations.
   * **NOT done**: no leg frame, and the box's structural end-wall
@@ -430,8 +428,8 @@ updating every module that imports it.
   `BOX_TOP_OVERHANG` (the old single-purpose param) was removed entirely,
   replaced by `BOX_TOP_PANEL_WIDTH` / `BOX_TOP_X_MIN` being computed
   directly from `DRAWER_OVERLAY_STYLE`. Verified via
-  [phase3_box_test.py](phase3_box_test.py) and
-  [phase6_bed_test.py](phase6_bed_test.py): in the default style, Box1's
+  [box_test.py](../furniture/bed/tests/box_test.py) and
+  [bed_test.py](../furniture/bed/tests/bed_test.py): in the default style, Box1's
   Top now spans exactly `X=[0,2000]` (was `X=[-16,2016]`), Bottom/side
   walls span `X=[16,1984]`, and the 2 drawer Faces exactly fill the
   remaining `X=[0,16]` / `X=[1984,2000]` gaps — total assembled width is
@@ -469,6 +467,18 @@ updating every module that imports it.
   anymore (the overall bed bounding box's Y-max dropped from 2116 to
   exactly 2100).
 
+* **Architecture cleanup** (no geometry changes — verified identical bboxes
+  before/after): `DRAWER_OVERLAY_STYLE`'s 4 scattered branches (2 in
+  `params.py`, 2 in `box.py`) collapsed into one `_drawer_overlay_geometry()`
+  in `params.py`, exposing `DRAWER_HEIGHT_REDUCTION`/`DRAWER_FACE_TOP_REF_Z`.
+  `panel.py` gained `create_assembly_panel()` (create + place + the
+  stock_source→color rule in one call); `box.py`'s `add_panel` and `bed.py`'s
+  4 panel functions now delegate to it instead of duplicating that logic.
+  `verify.py` (new) turns the phase test scripts' printed bounding boxes into
+  real pass/fail assertions — this also caught 2 pre-existing wrong "expected"
+  lines (`phase3_box_test.py`'s Z range ignored the Face's `-SKIRT_HEIGHT`
+  reach; `phase6_bed_test.py`'s ignored the headboard extending past Y=0/Z=0).
+
 ## Phase 7 — Alternate variant: push-to-open (Model B)
 
 * Reuse the same parametric core; switch `DRAWER_FRONT_MODE` / rail type and
@@ -491,7 +501,7 @@ updating every module that imports it.
   gets `RECLAIMED_MDF_COLOR` regardless of role; `box.py`'s `add_panel()`
   now derives this automatically instead of every call site hardcoding a
   color. `ShapeColor` still isn't wired to actually render in the FreeCAD
-  viewport (data-only, see Phase 2 entry) — [apply_colors.py](apply_colors.py)
+  viewport (data-only, see Phase 2 entry) — [apply_colors.py](../tools/apply_colors.py)
   is a one-off helper to run inside the GUI's Python console (not
   freecadcmd) that copies `PanelColor` onto `ViewObject.ShapeColor` for
   whatever document is currently open, since headless scripts can't write

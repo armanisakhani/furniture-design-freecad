@@ -18,7 +18,7 @@ guessing which Navigation Cube corner to click.
           re-centers automatically no matter what's currently open.
 
 Usage:
-    exec(open("/Users/divar/design/bedroom/set_view.py").read())
+    exec(open("/Users/divar/design/bedroom/tools/set_view.py").read())
     set_camera(yaw=45, pitch=25, distance=3000)
     set_camera(yaw=45, pitch=-25, distance=3000)   # from below
 """
