@@ -19,6 +19,7 @@ SWATCHES = {
     "misty": dict(code=1128, rgb=(0.31, 0.44, 0.50)),  # 1128-misty.jpg
     "brown": dict(code=1126, rgb=(0.43, 0.35, 0.28)),  # 1126-brown.jpg
     "anthracite": dict(code=1129, rgb=(0.38, 0.37, 0.36)),  # 1129-anthracite.png
+    "navy": dict(code=None, rgb=(0.11, 0.15, 0.28)),  # سرمه‌ای — in-stock sheet, no swatch photo yet
 }
 
 # --- Palettes: which swatch plays which role ----------------------------
@@ -28,6 +29,7 @@ SWATCHES = {
 PALETTES = {
     "default": dict(body="misty", drawer_front="brown"),
     "charcoal_front": dict(body="misty", drawer_front="anthracite"),
+    "navy_body": dict(body="navy", drawer_front="brown"),  # in-stock sheets: STYLE=5 cut list
 }
 
 

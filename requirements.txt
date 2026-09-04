@@ -1,0 +1,3 @@
+# Cut-list / sheet-nesting tooling (tools/cutlist.py) — not needed by the
+# FreeCAD model itself (that runs under freecadcmd's own bundled Python).
+rectpack==0.2.2
