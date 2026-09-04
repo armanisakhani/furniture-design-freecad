@@ -28,7 +28,7 @@ FREECADCMD = "/Applications/FreeCAD.app/Contents/Resources/bin/freecadcmd"
 
 
 def main():
-    order_spec = os.environ.get("ORDER", "bed:1,dresser:1,wardrobe:1")
+    order_spec = os.environ.get("ORDER", "bed:5,dresser:1,wardrobe:1")
     entries = parse_order(order_spec)
 
     for entry in entries:

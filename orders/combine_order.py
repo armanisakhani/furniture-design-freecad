@@ -46,14 +46,20 @@ def main():
         for _ in range(entry["qty"]):
             copies = combined_doc.copyObject(source_objs, True)
             # Apply the flip (if any) about the world origin first, then
-            # re-measure the bbox and shift X/Y back to the same
-            # (x_offset, 0, *) baseline every item starts from — a plain
-            # rotation changes which local coordinates end up where, so
-            # the old (pre-rotation) bbox can't be reused for the shift.
+            # re-measure the bbox — a plain rotation changes which local
+            # coordinates end up where, so the old (pre-rotation) bbox
+            # can't be reused for the shift below.
             for obj in copies:
                 obj.Placement = App.Placement(App.Vector(0, 0, 0), rotation).multiply(obj.Placement)
             bbox = combined_bbox(copies)
-            shift = App.Vector(x_offset - bbox.XMin, -bbox.YMin, 0)
+            # Y=0 is the shared "wall": every item's own BACK (its own
+            # bbox.YMax — the Back panel for dresser/wardrobe, the
+            # headboard for a flipped bed) lands there, with its front
+            # protruding toward -Y by its own depth. Aligns backs against
+            # one wall, like real furniture, instead of aligning fronts
+            # (which left the bed's headboard sticking out past everyone
+            # else's own back).
+            shift = App.Vector(x_offset - bbox.XMin, -bbox.YMax, 0)
             for obj in copies:
                 obj.Placement = App.Placement(obj.Placement.Base + shift, obj.Placement.Rotation)
             x_offset += bbox.XLength + GAP
