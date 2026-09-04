@@ -28,11 +28,15 @@ import colors
 # own same-named env var (wins over the style's value):
 # `DRAWER_STYLE=inset`, `MATTRESS_TO_FRAME_GAP_WIDTH=50`, `HAS_LEG_FRAME=0`.
 STYLES = {
-    1: dict(drawer_style="overlay_over_box", mattress_gap_width=0, has_leg_frame=True),
-    2: dict(drawer_style="overlay_under_box", mattress_gap_width=100, has_leg_frame=True),
-    3: dict(drawer_style="inset", mattress_gap_width=100, has_leg_frame=True),
-    4: dict(drawer_style="inset", mattress_gap_width=0, has_leg_frame=True),
-    5: dict(drawer_style="inset", mattress_gap_width=0, has_leg_frame=False),
+    1: dict(drawer_style="overlay_over_box", mattress_gap_width=0, has_leg_frame=True, middle_box_reverse_color=False),
+    2: dict(drawer_style="overlay_under_box", mattress_gap_width=100, has_leg_frame=True, middle_box_reverse_color=False),
+    3: dict(drawer_style="inset", mattress_gap_width=100, has_leg_frame=True, middle_box_reverse_color=False),
+    4: dict(drawer_style="inset", mattress_gap_width=0, has_leg_frame=True, middle_box_reverse_color=False),
+    5: dict(drawer_style="inset", mattress_gap_width=0, has_leg_frame=False, middle_box_reverse_color=False),
+    # Same as style 5, except the middle box's body/drawer-front colors
+    # (colors.py) are swapped — a color-preview variant, e.g. a navy
+    # middle box between 2 misty ones.
+    6: dict(drawer_style="inset", mattress_gap_width=0, has_leg_frame=False, middle_box_reverse_color=True),
 }
 
 
@@ -47,6 +51,8 @@ def _resolve_style():
         values["mattress_gap_width"] = int(os.environ["MATTRESS_TO_FRAME_GAP_WIDTH"])
     if os.environ.get("HAS_LEG_FRAME"):
         values["has_leg_frame"] = os.environ["HAS_LEG_FRAME"] not in ("0", "false", "False")
+    if os.environ.get("MIDDLE_BOX_REVERSE_COLOR"):
+        values["middle_box_reverse_color"] = os.environ["MIDDLE_BOX_REVERSE_COLOR"] not in ("0", "false", "False")
     return values
 
 
@@ -122,12 +128,11 @@ BOX_SHELL_ALL_NEW = os.environ.get("BOX_SHELL_ALL_NEW", "") not in ("", "0", "fa
 # only (box_index == BOX_COUNT // 2, and only when BOX_COUNT is odd — with
 # an even count there's no single middle box, so this has no effect) — e.g.
 # preview the assembled bed with the middle box's body in the drawer-front
-# color and vice versa, without changing the color scheme everywhere. Env
-# var only (a one-off preview toggle, not a style/palette choice):
+# color and vice versa, without changing the color scheme everywhere. Set
+# per style (STYLE=6 turns it on, see STYLES above); still overridable on
+# top of any style with its own env var, same as HAS_LEG_FRAME etc:
 # `MIDDLE_BOX_REVERSE_COLOR=1 make view-bed`. See box.py's create_box.
-MIDDLE_BOX_REVERSE_COLOR = os.environ.get("MIDDLE_BOX_REVERSE_COLOR", "") not in (
-    "", "0", "false", "False",
-)
+MIDDLE_BOX_REVERSE_COLOR = _style["middle_box_reverse_color"]
 
 # --- Drawer -----------------------------------------------------------
 DRAWERS_PER_BOX = 2
