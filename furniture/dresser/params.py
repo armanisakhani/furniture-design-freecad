@@ -27,11 +27,16 @@ import colors
 # misty, drawer fronts brown) — same idea as furniture/bed's
 # MIDDLE_BOX_REVERSE_COLOR toggle, just picked by a style number here
 # since the dresser has no other structural variant yet to hang it off of.
-# REVERSE_COLORS can still be overridden on top of the selected style with
-# its own same-named env var, same as STYLE's own per-knob overrides.
+# Style 3 additionally alternates each drawer's own Face between the 2
+# colors instead of every Face sharing one (see ALTERNATE_DRAWER_COLORS
+# below). Both reverse_colors and alternate_drawer_colors can still be
+# overridden on top of the selected style with their own same-named env
+# var (REVERSE_COLORS / ALTERNATE_DRAWER_COLORS), same as STYLE's own
+# per-knob overrides.
 STYLES = {
-    1: dict(reverse_colors=False),
-    2: dict(reverse_colors=True),
+    1: dict(reverse_colors=False, alternate_drawer_colors=False),
+    2: dict(reverse_colors=True, alternate_drawer_colors=False),
+    3: dict(reverse_colors=True, alternate_drawer_colors=True),
 }
 
 
@@ -42,11 +47,19 @@ def _resolve_style():
     values = dict(STYLES[style_id])
     if os.environ.get("REVERSE_COLORS"):
         values["reverse_colors"] = os.environ["REVERSE_COLORS"] not in ("0", "false", "False")
+    if os.environ.get("ALTERNATE_DRAWER_COLORS"):
+        values["alternate_drawer_colors"] = os.environ["ALTERNATE_DRAWER_COLORS"] not in ("0", "false", "False")
     return values
 
 
 _style = _resolve_style()
 REVERSE_COLORS = _style["reverse_colors"]
+# Whether each drawer's own Face alternates between DRAWER_FRONT_COLOR and
+# BODY_COLOR instead of every Face sharing DRAWER_FRONT_COLOR uniformly:
+# the topmost drawer gets DRAWER_FRONT_COLOR (the usual accent, "reverse
+# of body"), the one right below it gets BODY_COLOR instead, then keeps
+# alternating down the stack. See dresser.py's _add_drawer.
+ALTERNATE_DRAWER_COLORS = _style["alternate_drawer_colors"]
 
 # --- Overall footprint ---------------------------------------------------
 # X = WIDTH (left-right), Y = DEPTH (front-back). Every drawer opens from
@@ -153,11 +166,3 @@ if REVERSE_COLORS:
 else:
     BODY_COLOR = colors.BODY_COLOR
     DRAWER_FRONT_COLOR = colors.DRAWER_FRONT_COLOR
-
-# Whether each drawer's own Face alternates between DRAWER_FRONT_COLOR and
-# BODY_COLOR instead of every Face sharing DRAWER_FRONT_COLOR uniformly:
-# the topmost drawer gets DRAWER_FRONT_COLOR (the usual accent, "reverse
-# of body"), the one right below it gets BODY_COLOR instead, then keeps
-# alternating down the stack. Independent of REVERSE_COLORS/STYLE above —
-# combines with either. See dresser.py's _add_drawer.
-ALTERNATE_DRAWER_COLORS = os.environ.get("ALTERNATE_DRAWER_COLORS", "") not in ("", "0", "false", "False")

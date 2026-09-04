@@ -29,4 +29,4 @@ fi
 
 osascript -e 'tell application "FreeCAD" to quit' 2>/dev/null || true
 sleep 1
-"$FREECAD_BIN" "$FILE" "$DIR/apply_view_and_colors.py"
+"$FREECAD_BIN" "$FILE" "$DIR/apply_view_and_colors_dresser.py"
