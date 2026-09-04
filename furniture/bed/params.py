@@ -12,6 +12,8 @@ never inline in geometry code, once the real number is known.
 
 import os
 
+import colors
+
 # --- Style presets ----------------------------------------------------
 # Bundles the handful of parameters that vary together for a design
 # variant, so switching variants is one env var instead of hand-editing
@@ -379,15 +381,15 @@ HEADBOARD_HEIGHT = 1100  # confirmed: 1.1m total, floor to top edge
 #   * DRAWER_FRONT_COLOR: the Drawer_box's Face (نما) panel only
 # A Face never carries the body color, and no other panel carries the
 # Face's color.
-RECLAIMED_MDF_COLOR = (1.0, 1.0, 1.0)  # confirmed: white
+#
+# BODY_COLOR/DRAWER_FRONT_COLOR come from colors.py, which selects a named
+# swatch per role (e.g. "misty" body + "brown" front) rather than a raw RGB
+# here — see colors.py to try a different combination (COLOR_SCHEME env
+# var), e.g. `COLOR_SCHEME=charcoal_front`.
+RECLAIMED_MDF_COLOR = colors.swatch_rgb("white")
 
-# Estimated by eye from references/colors/1128-misty.jpg ("Misty", code
-# 1128) — no exact hex/RAL code given yet, refine if one becomes available.
-BODY_COLOR = (0.31, 0.44, 0.50)  # TBD: "Misty" 1128, estimated from swatch
-
-# Estimated by eye from references/colors/1126-brown.jpg ("Brown", code
-# 1126) — same caveat as BODY_COLOR above.
-DRAWER_FRONT_COLOR = (0.43, 0.35, 0.28)  # TBD: "Brown" 1126, estimated from swatch
+BODY_COLOR = colors.BODY_COLOR
+DRAWER_FRONT_COLOR = colors.DRAWER_FRONT_COLOR
 
 WOOD_COLOR = (0.76, 0.60, 0.42)  # decorative wood-toned panels, if used
 RAIL_COLOR = (0.5, 0.5, 0.5)   # metal rails / hardware
