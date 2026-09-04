@@ -59,7 +59,7 @@ KERF = 3        # mm, saw blade width consumed per cut
 TRIM_MARGIN = 10  # mm, unusable strip left at each sheet edge
 
 COLOR_NAMES = {
-    (0.11, 0.15, 0.28): "سرمه‌ای (Navy / Body)",
+    (0.31, 0.44, 0.5): "میستی (Misty / Body)",
     (0.43, 0.35, 0.28): "قهوه‌ای (Brown / Drawer Face)",
 }
 

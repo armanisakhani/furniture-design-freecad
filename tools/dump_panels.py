@@ -7,7 +7,7 @@ tools/cutlist.py (a separate, plain-Python script) can consume it without
 needing freecadcmd/FreeCAD itself.
 
 Run with freecadcmd (see tools/dump_panels.sh):
-    STYLE=5 COLOR_SCHEME=navy_body tools/dump_panels.sh
+    STYLE=5 COLOR_SCHEME=charcoal_front tools/dump_panels.sh
 """
 
 import json

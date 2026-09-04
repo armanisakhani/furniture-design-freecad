@@ -40,3 +40,22 @@ cutlist-bed:
 	BOX_SHELL_ALL_NEW=0 PANELS_OUTPUT=furniture/bed/output/panels_top_only.json tools/dump_panels.sh
 	BOX_SHELL_ALL_NEW=1 PANELS_OUTPUT=furniture/bed/output/panels_full_shell.json tools/dump_panels.sh
 	.venv/bin/python tools/cutlist.py
+
+.PHONY: test-dresser view-dresser export-dresser
+
+test-dresser:
+	$(FREECADCMD) furniture/dresser/tests/dresser_test.py
+
+view-dresser:
+ifdef REBUILD
+	tools/view_dresser.sh --rebuild
+else
+	tools/view_dresser.sh
+endif
+
+export-dresser:
+ifdef REBUILD
+	tools/export_dresser_gltf.sh --rebuild
+else
+	tools/export_dresser_gltf.sh
+endif
