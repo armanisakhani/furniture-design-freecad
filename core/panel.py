@@ -23,7 +23,7 @@ class Panel:
     fiber panel. See CONTEXT.md for the visible/stock_source concept this
     implements."""
 
-    MATERIALS = ["MDF", "PVC", "Fiber"]
+    MATERIALS = ["MDF", "PVC", "Fiber", "Metal"]
     STOCK_SOURCES = ["new", "reclaimed"]
 
     def __init__(self, obj):

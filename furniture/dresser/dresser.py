@@ -1,18 +1,23 @@
 """
 Single dresser (دراور) carcass: Top, Bottom, Left, Right, Back shell
-panels plus a recessed toe-kick board, and DRAWER_COUNT Drawer carcasses
-stacked vertically, each opening from the front (Y=0) face. Built from
-Panel objects (core/panel.py) and positioned with Placement so they butt
-together using MDF_THICKNESS — same primitives and visible/stock_source
-convention as furniture/bed (see docs/CONTEXT.md), adapted for a single
-front-opening stack instead of furniture/bed's 2 opposite-opening rows.
+panels sitting directly on the floor (no raised base/plinth), and
+DRAWER_COUNT Drawer carcasses stacked vertically, each opening from the
+front (Y=0) face. Built from Panel objects (core/panel.py) and positioned
+with Placement so they butt together using MDF_THICKNESS — same
+primitives and visible/stock_source convention as furniture/bed (see
+docs/CONTEXT.md), adapted for a single front-opening stack instead of
+furniture/bed's 2 opposite-opening rows.
 
 First draft, for visual review — styled after
-references/reference-page8.png's look only (visible carcass sides, a
-recessed toe-kick board), not its connection hardware (drawer slides,
-corner brackets, adjustable feet) or its Full Overlay drawer fronts (see
-below): this design's own fastening is screws, and slide/feet hardware
-isn't modeled yet. See params.py for what's still a placeholder.
+references/reference-page8.png's look (visible carcass sides) and
+references/reference-base-example.jpeg's base (no toe-kick board or plinth — the
+Bottom panel sits right on the floor, with the Left/Right panels resting
+on top of it; a few mm of plastic glide feet are screwed straight into
+the Left/Right panels' own bottom edge, but that's too small to affect
+this model's own dimensions, so it isn't modeled), not either reference's
+connection hardware (drawer slides, corner brackets) or the PDF's Full
+Overlay drawer fronts (see below): this design's own fastening is screws.
+See params.py for what's still a placeholder.
 
 Global axes: X = WIDTH (left-right), Y = DEPTH (front-back, drawers open
 toward -Y, i.e. out through the Y=0 face), Z = height, floor at Z=0.
@@ -38,6 +43,13 @@ panels' own top edge instead of stopping under the Top panel — the Top
 panel's own front edge retreats a little (TOP_PANEL_Y_MIN) to make room,
 while that drawer's carcass stays the normal size. Each drawer's own Face
 color comes from DRAWER_COLOR_PATTERN (params.py).
+
+Each drawer also gets a metal bar handle (دستگیره), centered on its own
+Face — see _add_handle. Unlike drawer-slide/glide-foot hardware (real,
+but not worth modeling), the user asked for this one to actually be
+built: a "bridge pull" shape (2 short mounting posts plus a bar) matching
+a real stainless-steel handle the user picked out (see params.py's
+HANDLE_WIDTH), sized from box-only Panel primitives like everything else.
 """
 
 import FreeCAD as App
@@ -47,14 +59,16 @@ from core.panel import create_assembly_panel, IDENTITY, ROT_X90, ROT_Y90
 
 
 def create_dresser(doc):
-    """Create one dresser: shell + toe-kick + DRAWER_COUNT stacked
-    drawers, bottom to top. Returns the list of all panels."""
+    """Create one dresser: shell + DRAWER_COUNT stacked drawers, bottom
+    to top. No raised base — the Bottom panel sits directly on the floor
+    (Z=0), same as references/reference-base-example.jpeg (tiny unmodeled glide feet
+    only, no toe-kick/plinth). Returns the list of all panels."""
     t = params.MDF_THICKNESS
     width = params.WIDTH
     depth = params.DEPTH
     interior_height = params.INTERIOR_HEIGHT
     side_height = params.SIDE_HEIGHT
-    bottom_z = params.TOE_KICK_HEIGHT
+    bottom_z = 0
 
     panels = []
 
@@ -77,7 +91,9 @@ def create_dresser(doc):
 
     # --- Shell ------------------------------------------------------
     # Bottom: horizontal, full WIDTH x DEPTH footprint — the Left/Right
-    # panels rest on top of its 2 edges. Hidden (underside, never seen).
+    # panels rest on top of its 2 edges (per the user's own correction;
+    # unlike the Top panel below, this one is NOT inset between them).
+    # Hidden (underside, never seen).
     add_panel(
         "Bottom", "Bottom Panel", width, depth, t,
         IDENTITY, App.Vector(0, 0, bottom_z),
@@ -95,9 +111,10 @@ def create_dresser(doc):
         visible=True, stock_source="new",
     )
     # Left/Right: visible (free-standing piece, unlike furniture/bed's
-    # boxes tucked into an assembly), full DEPTH, running side_height tall
-    # — SIDE_TOP_LIP taller than the Top panel's own surface, forming the
-    # lip on each end by themselves (no separate part).
+    # boxes tucked into an assembly), full DEPTH, resting on top of the
+    # Bottom panel (bottom_z + t) and running side_height tall — SIDE_TOP_LIP
+    # taller than the Top panel's own surface, forming the lip on each end
+    # by themselves (no separate part).
     add_panel(
         "Left", "Left Side Panel", side_height, depth, t,
         ROT_Y90, App.Vector(0, 0, bottom_z + t),
@@ -115,15 +132,6 @@ def create_dresser(doc):
         "Back", "Back Panel", width, side_height, t,
         ROT_X90, App.Vector(0, depth - t, bottom_z + t),
         visible=False, stock_source="reclaimed",
-    )
-    # Toe-kick: fills the raised gap at the front only, recessed by
-    # TOE_KICK_SETBACK for toe clearance (see params.py) — the feet/legs
-    # doing the actual raising aren't modeled yet.
-    add_panel(
-        "ToeKick", "Toe-Kick Board", width, params.TOE_KICK_HEIGHT,
-        params.TOE_KICK_THICKNESS, ROT_X90,
-        App.Vector(0, params.TOE_KICK_SETBACK, 0),
-        visible=True, stock_source="new",
     )
 
     # --- Drawers ------------------------------------------------------
@@ -220,8 +228,41 @@ def _add_drawer(add_panel, index, x_min, band_z_min):
         params.BODY_COLOR if params.DRAWER_COLOR_PATTERN[from_top] == "1"
         else params.DRAWER_FRONT_COLOR
     )
+    face_x_min = t + gap_x / 2
+    face_z_min = band_z_min + gap_z / 2
     p(
         "Face", "Face", params.DRAWER_FACE_WIDTH, face_height, overlay,
-        ROT_X90, App.Vector(t + gap_x / 2, setback - overlay, band_z_min + gap_z / 2),
+        ROT_X90, App.Vector(face_x_min, setback - overlay, face_z_min),
         color=face_color, visible=True, stock_source="new",
+    )
+
+    _add_handle(p, params.DRAWER_FACE_WIDTH, face_x_min, face_height, face_z_min)
+
+
+def _add_handle(p, face_width, face_x_min, face_height, face_z_min):
+    """Metal bar handle (دستگیره), centered on one drawer's Face: 2 short
+    mounting posts running back from the Face's own front surface (Y=0)
+    by HANDLE_STANDOFF, plus a bar connecting their outer tips — a
+    "bridge pull" shape, all built from the same box-only Panel primitive
+    (no new rotation needed: IDENTITY already puts Width along Y, which
+    is the posts' own long axis here)."""
+    bar_size = params.HANDLE_BAR_SIZE
+    standoff = params.HANDLE_STANDOFF
+    handle_x_min = face_x_min + (face_width - params.HANDLE_WIDTH) / 2
+    handle_z_min = face_z_min + (face_height - bar_size) / 2
+
+    for side, x in (("Left", handle_x_min), ("Right", handle_x_min + params.HANDLE_WIDTH - bar_size)):
+        p(
+            f"HandlePost{side}", f"Handle Post ({side.lower()})",
+            bar_size, standoff, bar_size, IDENTITY,
+            App.Vector(x, -standoff, handle_z_min),
+            material="Metal", color=params.HANDLE_COLOR,
+            visible=True, stock_source="new",
+        )
+    p(
+        "HandleBar", "Handle Bar",
+        params.HANDLE_WIDTH, bar_size, bar_size, IDENTITY,
+        App.Vector(handle_x_min, -standoff - bar_size, handle_z_min),
+        material="Metal", color=params.HANDLE_COLOR,
+        visible=True, stock_source="new",
     )

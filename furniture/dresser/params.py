@@ -36,6 +36,15 @@ retreats a little (TOP_PANEL_Y_MIN) to make room. Per-drawer Face color
 now comes from DRAWER_COLOR_PATTERN, a string with one '0'/'1' digit per
 drawer (top to bottom) — replaces the old ALTERNATE_DRAWER_COLORS
 boolean, per the user's own suggested config format.
+
+Also revised 2026-09-05: dropped the recessed toe-kick board — the
+user's own reference (references/reference-base-example.jpeg) shows no board at all,
+just small corner glide feet screwed directly into the underside of the
+Left/Right panels at each corner (front and back), same idea as
+furniture/bed's unmodeled drawer-slide hardware: real, but not worth
+modeling as geometry. See FOOT_HEIGHT below — the Left/Right/Back panels
+now run straight down to just above the floor instead of stopping
+TOE_KICK_HEIGHT short of it for a board to fill.
 """
 
 import os
@@ -123,9 +132,9 @@ if len(DRAWER_COLOR_PATTERN) != DRAWER_COUNT or any(c not in "01" for c in DRAWE
 DRAWER_FACE_HEIGHT = 200  # confirmed: ~20cm per the user's brief
 
 # Reveal gap between 2 vertically-stacked Face panels (and between the
-# top/bottom Face and whatever caps it — the Top panel / toe-kick board),
-# so they don't rub. Mirrors furniture/bed's DRAWER_FACE_GAP, just along Z
-# here instead of Y.
+# bottom Face and the Bottom panel it sits just above), so they don't
+# rub. Mirrors furniture/bed's DRAWER_FACE_GAP, just along Z here instead
+# of Y.
 DRAWER_FACE_GAP_Z = 3  # TBD: placeholder reveal, no real number chosen yet
 
 # The Drawer's front is 2 separate panels: a structural front (part of the
@@ -154,6 +163,25 @@ DRAWER_FACE_SIDE_GAP = 3  # TBD: placeholder reveal, no real number chosen yet
 # never spanning past them. The whole point of Inset over Full Overlay:
 # this is what keeps the side panels' own front edge visible.
 DRAWER_FACE_WIDTH = WIDTH - 2 * MDF_THICKNESS - DRAWER_FACE_SIDE_GAP
+
+# --- Handle (دستگیره) ------------------------------------------------------
+# Every drawer gets a metal bar handle centered on its own Face — unlike
+# drawer-slide/glide-foot hardware, this one the user asked to actually
+# model. Shape: a "bridge" pull — the bar itself, plus 2 short mounting
+# posts connecting it back to the Face — built from the same box-only
+# Panel primitive as everything else (core/panel.py), just with
+# Material="Metal" and HANDLE_COLOR.
+#
+# Matches the user's own chosen hardware: Shahre Yaragh / Meloni brushed
+# stainless steel cabinet handle, the 192mm screw-center size (232mm
+# overall length) — see HANDLE_COLOR's "metal" swatch for the brushed-
+# steel finish. This model doesn't drill screw holes, so HANDLE_WIDTH is
+# the visible bar's overall length (232mm) rather than the 192mm
+# hole-to-hole spacing; the posts simply sit at the bar's own two ends.
+HANDLE_WIDTH = 232  # confirmed: Shahre Yaragh/Meloni handle, 192mm screw-center size
+HANDLE_BAR_SIZE = 10  # TBD: bar cross-section (mm) — not listed on the product page
+HANDLE_STANDOFF = 25  # TBD: projection from the Face (mm) — not listed on the product page
+HANDLE_COLOR = colors.swatch_rgb("metal")
 
 # Per-side horizontal clearance (X) between the drawer carcass and the
 # dresser's own opening, for slide hardware. Same ballpark as
@@ -192,19 +220,20 @@ DRAWER_DEPTH = DEPTH - 2 * MDF_THICKNESS - RAIL_BACK_CLEARANCE - DRAWER_FRONT_SE
 # (slide hardware).
 DRAWER_WIDTH = WIDTH - 2 * MDF_THICKNESS - 2 * RAIL_CLEARANCE
 
-# --- Toe-kick ------------------------------------------------------------
-# The whole carcass is raised off the floor by TOE_KICK_HEIGHT (small
-# feet, unmodeled — a fabrication/hardware detail, out of scope for this
-# first draft per the user), and a thin decorative board fills that gap
-# at the front, recessed by TOE_KICK_SETBACK for toe clearance. Same idea
-# as furniture/bed's Skirt, just filling the whole raised height instead
-# of leaving part of it open (no drawer here needs hand clearance
-# underneath, unlike bed's handle-less Model A).
-TOE_KICK_HEIGHT = 60  # TBD
-TOE_KICK_SETBACK = 20  # TBD: how far back from the front face the toe-kick board sits
-TOE_KICK_THICKNESS = 16  # TBD
+# --- Base / feet -----------------------------------------------------------
+# No raised base/plinth at all (per references/reference-base-example.jpeg — there's
+# no toe-kick board or leg frame in that reference, just small plastic
+# glide feet screwed straight into the Left/Right panels' own bottom
+# edge). Those glides are a few mm at most: not worth a floor-offset
+# parameter, since they don't change this model's own dimensions or
+# look — the Left/Right/Back panels' own bottom edge (Z=0) IS the floor,
+# same idea as furniture/bed's HAS_LEG_FRAME=False case.
 
 # --- Top panel / side lip -------------------------------------------------
+# The Bottom panel spans the full WIDTH x DEPTH footprint, and the
+# Left/Right panels rest on top of its 2 edges (per the user's own
+# correction) — unlike the Top panel below, it is NOT inset between them.
+
 # The Top panel sits INSET between the 2 side panels (see module
 # docstring) instead of resting on top of them.
 TOP_PANEL_WIDTH = WIDTH - 2 * MDF_THICKNESS
@@ -242,9 +271,10 @@ INTERIOR_HEIGHT = DRAWER_COUNT * DRAWER_FACE_HEIGHT
 # SIDE_TOP_LIP.
 SIDE_HEIGHT = INTERIOR_HEIGHT + MDF_THICKNESS + SIDE_TOP_LIP
 
-# Exterior height, floor to the 2 side panels' own top edge (the tallest
-# feature — see SIDE_TOP_LIP above).
-HEIGHT = TOE_KICK_HEIGHT + MDF_THICKNESS + SIDE_HEIGHT
+# Exterior height, floor (Z=0 — no raised base, see above) to the 2 side
+# panels' own top edge (the tallest feature — see SIDE_TOP_LIP above).
+# The Bottom panel's own thickness sits below the sides (see above).
+HEIGHT = MDF_THICKNESS + SIDE_HEIGHT
 
 # How much taller the topmost drawer's own Face is than every other
 # drawer's — enough to reach from its normal top edge all the way up to
