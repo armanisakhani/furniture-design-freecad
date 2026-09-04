@@ -91,14 +91,17 @@ def create_end_face(doc):
     separate EndSkirt panel used to do (now redundant):
       * X: FRAME_WIDTH always (not BOX_TOP_PANEL_WIDTH, which could
         overshoot).
-      * Z: from -SKIRT_HEIGHT (matches each Drawer_box Face) up to the top
-        of the MattressStop cap (box_height + t).
+      * Z: with HAS_LEG_FRAME, from -SKIRT_HEIGHT (matches each Drawer_box
+        Face) up to the top of the MattressStop cap (box_height + t); with
+        no leg frame, the box's own bottom (Z=0) already IS the floor, so
+        there's no skirt reach at all — it stops exactly there instead of
+        dangling below the floor.
       * Y: starts at FRAME_LENGTH - MDF_THICKNESS — the last box's own far
         wall stops 1 MDF_THICKNESS short of FRAME_LENGTH so this panel
         sits flush in that gap and ends exactly at FRAME_LENGTH.
     """
     t = params.MDF_THICKNESS
-    z_min = -params.SKIRT_HEIGHT
+    z_min = -params.SKIRT_HEIGHT if params.HAS_LEG_FRAME else 0
     z_max = params.BOX_HEIGHT + t
     return create_assembly_panel(
         doc, "EndFaceFoot", "End Face (Foot)",
@@ -115,10 +118,11 @@ def create_headboard(doc):
     """Head-end 'crown' (تاج): attached to the outer face of the first
     box's SideWallNear, extending into negative Y — mirrors EndFaceFoot's
     attachment pattern. Unlike EndFaceFoot, HEADBOARD_HEIGHT (1.4m) is
-    measured from the actual floor (Z=-LEG_FRAME_HEIGHT), not from the
-    box's own bottom."""
+    measured from the actual floor (Z=FLOOR_Z), not from the box's own
+    bottom — FLOOR_Z is Z=0 itself when HAS_LEG_FRAME is False, so the
+    headboard then sits flush on the floor rather than reaching below it."""
     t = params.MDF_THICKNESS
-    z_min = -params.LEG_FRAME_HEIGHT
+    z_min = params.FLOOR_Z
     return create_assembly_panel(
         doc, "Headboard", "Headboard (Crown)",
         length=params.FRAME_WIDTH,

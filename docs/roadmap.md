@@ -484,6 +484,262 @@ updating every module that imports it.
 * Reuse the same parametric core; switch `DRAWER_FRONT_MODE` / rail type and
   drop the leg frame, without duplicating the whole model.
 
+* [x] Started early, out of order (user wanted Model B's real drawer-front
+  geometry now, not just the `STYLE=2` naming placeholder that already
+  existed): `DRAWER_FRONT_MODE` was defined in `params.py` since Phase 1
+  but never actually wired into `box.py` — every style built the same
+  overlay Face regardless, which happened to still "work" for `STYLE=2`
+  only because the Face's own overlay reach (to `FRAME_WIDTH`/`-SKIRT_HEIGHT`)
+  papered over the fact that nothing else in that style reached that far.
+  * User's own framing, confirmed correct by working through the geometry:
+    since the Face always mounts flush against the structural front's
+    outer face and protrudes outward by `DRAWER_FRONT_OVERLAY_AMOUNT`
+    (unchanged in both modes), the only thing that needs to differ for an
+    inset/flush front is *where the structural front itself sits* — set
+    back from the shell's own open face by exactly the Face's own
+    thickness, so the Face's protrusion is fully "absorbed" and its outer
+    surface lands flush with the shell instead of past it. This is the
+    numeric answer to the user's own hunch that "the drawer needs to go
+    further back" for push-to-open. New param `DRAWER_FRONT_SETBACK`
+    (`params.py`, via `_drawer_front_geometry()`, same one-function-per-
+    style-axis pattern as `_drawer_overlay_geometry()`): `0` for
+    `"overlay"`, `DRAWER_FRONT_OVERLAY_AMOUNT` for `"inset"`.
+  * `STYLES` (`params.py`) gained a third coupled knob, `drawer_front_mode`
+    (`"overlay"` for `STYLE=1`, `"inset"` for `STYLE=2`), independently
+    overridable via its own `DRAWER_FRONT_MODE` env var like the other two.
+  * `box.py`'s `add_drawer()`: `carcass_x_min` (and therefore the
+    structural front, back, bottom, and both sides — the whole carcass)
+    now shifts by `DRAWER_FRONT_SETBACK` toward the box's interior. The
+    Face's own X position (`face_x`) is now expressed relative to the
+    front's own position (`front_x - overlay` / `front_x + t`) rather than
+    the shell's raw `x_min`, so it automatically follows the front wherever
+    `DRAWER_FRONT_SETBACK` puts it — no separate "which mode" branch needed
+    for that part. The internal transverse wall's position (`wall1_x_min`/
+    `wall2_x_max`) also picked up the same `DRAWER_FRONT_SETBACK` offset,
+    since it's defined as a fixed `RAIL_BACK_CLEARANCE` behind the drawer's
+    *actual* back — without this the wall would have collided with the
+    now-deeper drawer back (setback 16mm vs. only 5mm of clearance).
+  * Per the user's own confirmed choices: in `"inset"` mode the Face has no
+    skirt/top-cap duty at all (unlike `"overlay"`, see `CONTEXT.md`'s
+    Structural front/Face and Skirt entries) — it's sized to just cover the
+    drawer opening, same footprint as the structural front. `HAS_DRAWER_
+    SIDE_SKIRT` (`params.py`) is now derived (`DRAWER_FRONT_MODE ==
+    "overlay"`) instead of hardcoded `True`, reflecting that Model B has no
+    drawer-side skirt and leaves that space open (no leg frame either, so
+    no hand-clearance need there).
+  * `box_test.py`'s expected bounding box (previously hardcoded assuming
+    the overlay Face always reached `FRAME_WIDTH`/`-SKIRT_HEIGHT`, which
+    happened to hold for both styles only because `DRAWER_FRONT_MODE` was
+    unwired) now branches on `DRAWER_FRONT_MODE`. `bed_test.py` needed no
+    change — its own expected bounds are already governed by the bed-level
+    panels (`MattressStopFoot`/`EndFaceFoot`/`Headboard`), which always
+    reach `FRAME_WIDTH` and `-LEG_FRAME_HEIGHT` regardless of the Box's own
+    per-drawer Face reach.
+  * Verified via `make test-bed` (`STYLE=1`) and `STYLE=2 make test-bed`
+    (both pass) plus a visual check in the FreeCAD GUI: `STYLE=2`'s
+    `box_test` now shows each Face flush at the shell's own open edge
+    (e.g. `X=[16,32]` on the near side, was `X=[0,16]` under overlay),
+    the structural front behind it at `X=[32,48]`, and the internal wall
+    correctly re-clears the deeper drawer back (`X=[687,703]`, still
+    exactly `RAIL_BACK_CLEARANCE` behind the new back position) — no
+    overlaps, `Zmin` no longer dips to `-SKIRT_HEIGHT`.
+  * **Still open, not addressed here**: `LEG_FRAME_HEIGHT` / the headboard's
+    floor reference (`-LEG_FRAME_HEIGHT`) aren't yet made style-aware —
+    Model B doesn't need a leg frame at all, but no actual leg-frame
+    geometry exists yet for either model (see Phase 6's "NOT done" note),
+    so there was nothing to conditionally drop. Revisit once Phase 6's leg
+    frame is actually built.
+
+* **Correction, same session**: the user caught 2 problems in the above.
+  First, the inset Face was sized to the drawer carcass's own (narrower)
+  footprint — wrong: a real push-to-open front's only job is covering the
+  hole in the box's own face, so it should fill the box's actual interior
+  opening (`BOX_INTERIOR_HEIGHT` tall, between the 2 side walls wide),
+  independent of how wide the mechanism behind it happens to be. Second,
+  explicit instruction: don't change `STYLE=1`/`STYLE=2` to fix this — add
+  a third style instead, so both Face-sizing flavors stay available side
+  by side.
+  * New `DRAWER_FRONT_MODE` value, `"inset_full"`, added alongside (not
+    replacing) `"inset"`; `STYLES` (`params.py`) gained `3: dict(...,
+    drawer_front_mode="inset_full")`, otherwise identical to `STYLE=2`'s
+    other knobs. `_drawer_front_geometry()` treats `"inset"` and
+    `"inset_full"` identically (`DRAWER_FRONT_SETBACK` doesn't change —
+    the user's complaint was about size, not position).
+  * New param `DRAWER_FACE_OPENING_GAP` (3, TBD placeholder, distinct from
+    `DRAWER_FACE_GAP` — that one's the reveal *between 2 adjacent boxes'*
+    Faces; this one's the reveal *within one box's own opening*, both
+    axes, so the Face doesn't rub against the shell). `box.py`'s
+    `add_drawer` gained a 3rd branch: Face height = `interior_height -
+    gap`, width = `(box_length - 2*t) - gap`, centered in the opening.
+  * Follow-up from the user, addressing a 3rd problem before it was even
+    asked as a question: once the Face stops reaching out to cover the
+    shell (both inset flavors) and now also stops reaching out to the
+    carcass's own width (`"inset_full"` specifically), a thin sliver of
+    the box shell's own front edge (Bottom, the 2 side walls — Top is
+    already always visible) shows around each drawer, framing it. That
+    edge would carry PVC banding (`CONTEXT.md`) to hide the raw MDF core;
+    the user asked for it to read as banded in `BODY_COLOR` rather than
+    each panel's usual `RECLAIMED_MDF_COLOR`/white — explicitly framed as
+    "as if we glued PVC on the front of it, in body color", i.e. a color
+    override, not a new geometric panel (no PVC-material panel objects
+    exist anywhere yet, despite `Panel.MATERIALS` listing `"PVC"` as an
+    option). New param `DRAWER_OPENING_EDGE_MATCHES_BODY` (`params.py`,
+    `True` only for `"inset_full"`); `box.py`'s `create_box()` passes an
+    explicit `color=BODY_COLOR` override (bypassing the normal
+    StockSource-based default) to Bottom/`SideWallNear`/`SideWallFar` when
+    set. `StockSource`/`PanelVisible` deliberately left untouched — only a
+    thin edge is actually visible, not the whole panel's face, so there's
+    no reason to re-source the whole board as new stock.
+  * Verified via `STYLE=3 make test-bed` (passes unchanged — the bigger
+    Face still fits entirely inside the existing shell bounds, so no
+    `box_test`/`bed_test` expectations needed updating) plus a direct
+    `PanelColor` check: under `STYLE=3`, `Box1_Bottom`/`Box1_Top`/
+    `Box1_SideWallNear` all report `BODY_COLOR` `(0.31, 0.44, 0.5)`; under
+    `STYLE=1`/`STYLE=2` they're unchanged at `RECLAIMED_MDF_COLOR`
+    `(1.0, 1.0, 1.0)`. `STYLE=1`/`STYLE=2` re-verified identical to before
+    this correction (`make test-bed`, `STYLE=2 make test-bed` both still
+    pass with the same expected values).
+  * **Noticed, not made by this work**: `params.py` changed on disk
+    mid-session (outside this correction) — `STYLE=2`'s `drawer_front_mode`
+    is now `"overlay"`, where it was `"inset"` right after Phase 7's first
+    entry above. Flagged to the user rather than reverted; unresolved as
+    of this entry.
+
+* **Architecture cleanup, same session**: the on-disk edit noted just above
+  turned out to be the user manually previewing a real 3rd combination —
+  a protruding ("overlay") front paired with the Top panel staying inset
+  (`"rail_above_drawer"`) — that `DRAWER_OVERLAY_STYLE` and
+  `DRAWER_FRONT_MODE` already allowed as 2 independent knobs, but which had
+  no name of its own. The user's own point: of the 4 combinations those 2
+  knobs allow, only 3 are real design intents (the 4th — an inset front
+  capped by an overhanging Top — was never used and isn't a real design).
+  Rather than keep exposing 2 separately-settable params whose product
+  mostly doesn't correspond to anything worth building, collapse them into
+  ONE `DRAWER_STYLE` param with exactly the 3 real values, named by the
+  user: `"overlay_over_box"` (old `box_over_drawer` + `overlay` — Model A,
+  unchanged), `"overlay_under_box"` (old `rail_above_drawer` + `overlay` —
+  the previously-nameless 3rd combination, now a first-class style),
+  `"inset"` (old `rail_above_drawer` + `inset_full` — Model B; the user
+  also confirmed the narrower carcass-sized `"inset"` front-mode value from
+  the previous correction should be dropped outright, not kept as a 4th
+  option: "we don't have inset_full vs inset, we have one model, which is
+  this full one").
+  * `params.py`: `_drawer_overlay_geometry()` and `_drawer_front_geometry()`
+    merged into one `_drawer_style_geometry(style)`, returning
+    `top_panel_width`/`top_x_min`/`drawer_height_reduction`/
+    `face_top_ref_z`/`front_setback`/`front_is_overlay` together per style
+    — same one-function-per-style-axis pattern as before, just now for one
+    axis instead of two. New `DRAWER_FRONT_IS_OVERLAY` (derived from the
+    style's `front_is_overlay`) replaces the narrower `DRAWER_FRONT_MODE`
+    string everywhere it was checked (`box.py`'s Face-sizing branch,
+    `HAS_DRAWER_SIDE_SKIRT`, `DRAWER_OPENING_EDGE_MATCHES_BODY`,
+    `box_test.py`'s expected-bounds branch) — a plain boolean now that only
+    2 Face behaviors exist (protrude vs. flush), not 3.
+  * `STYLES` (`params.py`): `drawer_overlay_style`/`drawer_front_mode` keys
+    collapsed into one `drawer_style` key; `1: "overlay_over_box"`,
+    `2: "overlay_under_box"` (formalizing the user's on-disk experiment),
+    `3`/`4: "inset"` (differing only in `mattress_gap_width`, kept as 2
+    separate style numbers since the user didn't ask to touch that axis).
+    `_resolve_style()`'s per-knob env override collapsed the same way —
+    `DRAWER_STYLE=<value>` now overrides the whole thing, replacing the old
+    separate `DRAWER_OVERLAY_STYLE=`/`DRAWER_FRONT_MODE=` overrides.
+  * `box.py`'s Face-sizing branch (`add_drawer`) simplified from a 3-way
+    `if/elif/else` on the old `DRAWER_FRONT_MODE` string down to a 2-way
+    `if params.DRAWER_FRONT_IS_OVERLAY: ... else: ...` — the narrow
+    carcass-sized Face branch is gone (no `DRAWER_STYLE` value reaches it
+    anymore, so it was dead code, not just unused).
+  * Verified via `make test-bed STYLE=1/2/3/4` (all 4 pass, 12 `[PASS]`
+    assertions each — 6 from `box_test`, 6 from `bed_test` — matching the
+    count before this refactor, confirming it changed naming/structure
+    only, not geometry).
+
+* **Bug found and fixed, same session**: the user spotted `Top`/`Bottom`
+  panel `Length` reading `176.8` (FreeCAD's default GUI unit is cm; `1768`
+  mm = `BOX_WIDTH` under `STYLE=4`) instead of the expected `180` (=
+  `FRAME_WIDTH`/10) — pointing straight at `_drawer_style_geometry`'s
+  `"inset"` branch. Root cause: `"inset"` set `top_panel_width=BOX_WIDTH`
+  (inset, matching `"overlay_under_box"`) on the theory that the front's
+  own inset-ness meant nothing needed to reach `FRAME_WIDTH`. Wrong —
+  `"overlay_under_box"` gets away with an inset Top only because its Face
+  bridges the `BOX_WIDTH -> FRAME_WIDTH` gap instead, and that Face spans
+  nearly the box's *entire* Y-length (`box_length - DRAWER_FACE_GAP`), not
+  just the drawer's own narrow width — so the gap is bridged continuously
+  for the whole bed, not just locally at each drawer. `"inset"`'s own Face
+  deliberately doesn't protrude at all (that's the point), so nothing was
+  bridging that gap anywhere — meaning the box's actual mattress-bearing
+  surface (the Top panel) fell `MDF_THICKNESS` short of `FRAME_WIDTH` on
+  both long edges, for the bed's entire length. Invisible under `STYLE=3`
+  only because `MATTRESS_TO_FRAME_GAP_WIDTH=100` there already tucks the
+  mattress in well short of `BOX_WIDTH`; `STYLE=4`'s `mattress_gap_width=0`
+  put the mattress exactly at `FRAME_WIDTH`, directly exposing the
+  unsupported overhang.
+  * Fix: `"inset"`'s `top_panel_width`/`top_x_min` changed to
+    `FRAME_WIDTH`/`0` (matching `"overlay_over_box"`) — decoupled from
+    `drawer_height_reduction` (still `MDF_THICKNESS`, unrelated rail-
+    hardware clearance concern) and from `front_setback`/`front_is_overlay`
+    (still recessed). Bottom and the 2 side walls stay inset (`BOX_WIDTH`)
+    — they don't bear the mattress, and their now-visible edge is exactly
+    the intended frame around the recessed drawer
+    (`DRAWER_OPENING_EDGE_MATCHES_BODY`). `face_top_ref_z` (unused by
+    `"inset"` Face sizing, but should still be internally consistent)
+    changed from `BOX_HEIGHT` to `BOX_HEIGHT - MDF_THICKNESS` to match the
+    "Top reaches `FRAME_WIDTH`" family.
+  * `box_test.py`: X bounds are now `0`/`FRAME_WIDTH` unconditionally (all
+    3 styles bridge the gap somehow now); only the Z bound (skirt reach)
+    still depends on `DRAWER_FRONT_IS_OVERLAY`.
+  * Verified: `STYLE=4`'s `Top`/`Bottom Panel` length now reads `180.0`cm
+    (`FRAME_WIDTH`), not `176.8`; `STYLE=2`'s stays at `196.8` (its own Top
+    is genuinely meant to stay inset there, bridged by the Face instead —
+    not a bug). All 4 styles still pass `make test-bed` (12 `[PASS]` each).
+
+* **New option, same session**: the user asked for a way to drop the leg/
+  support frame entirely — the bed sitting straight on the floor, with
+  `EndFaceFoot`/`Headboard` (`bed.py`) stopping exactly at the box's own
+  bottom instead of reaching below it — meaningful only for `DRAWER_STYLE
+  ="inset"` (push-to-open never needs to reach underneath the drawer, so
+  there's no hand-clearance reason to raise the bed; the 2 "overlay_*"
+  styles still need the leg frame to open their handle-less drawers by
+  hand). Confirmed this needed a genuinely new parameter, not just a new
+  `STYLE` entry on existing knobs — nothing before this tracked whether a
+  leg frame exists at all, only its height.
+  * New `HAS_LEG_FRAME` (`params.py`, bool, `True` by default), added to
+    `STYLES` as a 3rd knob alongside `drawer_style`/`mattress_gap_width`,
+    independently overridable via its own `HAS_LEG_FRAME=0/1` env var.
+    Raises `ValueError` at import time if set `False` together with any
+    `DRAWER_STYLE` other than `"inset"` — fail fast on the one combination
+    the user said doesn't make sense, rather than silently building an
+    unopenable drawer.
+  * New `FLOOR_Z` (`params.py`): the actual floor's Z coordinate —
+    `-LEG_FRAME_HEIGHT` normally, or `0` itself (the box's own bottom) when
+    `HAS_LEG_FRAME` is `False`. `bed.py`'s `create_headboard` now measures
+    `HEADBOARD_HEIGHT` up from `FLOOR_Z` instead of a hardcoded
+    `-LEG_FRAME_HEIGHT`, so it lands on the actual floor either way rather
+    than dangling in mid-air (if the frame were removed with no other
+    change) or burying itself in the ground. `create_end_face` similarly:
+    its `EndFaceFoot` skirt-reach (`-SKIRT_HEIGHT`, matching each
+    Drawer_box Face) only applies with `HAS_LEG_FRAME` — with no leg frame
+    there's no floor gap left to visually bridge toward, so it stops
+    exactly at the box's own bottom (Z=0) instead.
+  * `STYLES` gained `5: dict(drawer_style="inset", mattress_gap_width=0,
+    has_leg_frame=False)`, reusing `STYLE=4`'s other settings.
+  * `bed_test.py`'s expected Z bounds changed from a hardcoded
+    `-LEG_FRAME_HEIGHT` to `FLOOR_Z` (and `zmax` to `FLOOR_Z +
+    HEADBOARD_HEIGHT`), so the same test file verifies correctly under
+    either floor reference.
+  * Verified via `STYLE=5 make test-bed` (passes, 12 `[PASS]`) and a direct
+    bounding-box check: under `STYLE=5`, `EndFaceFoot` now spans
+    `Z=[0.0, 298.0]` (was `Z=[-20.0, 298.0]` with a leg frame) and
+    `Headboard` spans `Z=[0.0, 1100.0]` (was `Z=[-100.0, 1000.0]`) — both
+    now sit flush on the floor rather than reaching below the box's own
+    bottom. The invalid-combination guard was also verified directly:
+    `STYLE=1 HAS_LEG_FRAME=0` raises `ValueError` at import time rather
+    than building anything.
+  * **Not yet addressed**: no actual leg-frame geometry exists for either
+    model regardless of this toggle (see Phase 6's original "NOT done"
+    note) — `HAS_LEG_FRAME`/`FLOOR_Z` only affect where `EndFaceFoot`/
+    `Headboard` land, since that's the only leg-frame-dependent geometry
+    that exists so far.
+
 ## Phase 8 — Doors, touch-latch mechanism, wider bedroom furniture
 
 * As in `plan.md`'s original Phase 7 — separate cabinets/wardrobe with doors,

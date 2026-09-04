@@ -52,14 +52,22 @@ def main():
             f"Z[{bbox.ZMin:7.1f},{bbox.ZMax:7.1f}]  Material={p.Material}"
         )
 
-    # Z runs SKIRT_HEIGHT below 0 (the Face panels' drawer-side skirt
-    # reach) and stops at BOX_HEIGHT.
+    # X bounds always reach FRAME_WIDTH now regardless of DRAWER_STYLE —
+    # via the Top panel itself in "overlay_over_box"/"inset", or via the
+    # Face in "overlay_under_box" (see params.py's _drawer_style_geometry).
+    # Z bounds still depend on DRAWER_FRONT_IS_OVERLAY: the 2 "overlay_*"
+    # styles — the Face also reaches SKIRT_HEIGHT below 0 (drawer-side
+    # skirt duty); "inset" (Model B, push-to-open) — the Face lands flush
+    # with the shell's own open face instead, and nothing reaches below
+    # Z=0 (no drawer-side skirt, see CONTEXT.md).
+    expected_xmin, expected_xmax = 0, params.FRAME_WIDTH
+    expected_zmin = -params.SKIRT_HEIGHT if params.DRAWER_FRONT_IS_OVERLAY else 0
     verify_footprint(
         "box_test", panels,
         expected=dict(
-            xmin=0, xmax=params.FRAME_WIDTH,
+            xmin=expected_xmin, xmax=expected_xmax,
             ymin=0, ymax=params.BOX_LENGTH,
-            zmin=-params.SKIRT_HEIGHT, zmax=params.BOX_HEIGHT,
+            zmin=expected_zmin, zmax=params.BOX_HEIGHT,
         ),
     )
 

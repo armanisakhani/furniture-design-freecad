@@ -44,7 +44,8 @@ def main():
     print(f"Total panels: {len(panels)} (expected {params.BOX_COUNT} x 18)")
 
     # Y runs MDF_THICKNESS below 0 (the headboard's own reach past the head
-    # end) and Z runs from -LEG_FRAME_HEIGHT (floor) up to the headboard's
+    # end) and Z runs from FLOOR_Z (the actual floor — -LEG_FRAME_HEIGHT
+    # normally, or 0 itself with HAS_LEG_FRAME=False) up to the headboard's
     # top edge (HEADBOARD_HEIGHT above the floor) — the tallest thing in
     # the assembly, above the mattress placeholder's own top.
     verify_footprint(
@@ -52,8 +53,8 @@ def main():
         expected=dict(
             xmin=0, xmax=params.FRAME_WIDTH,
             ymin=-params.MDF_THICKNESS, ymax=params.FRAME_LENGTH,
-            zmin=-params.LEG_FRAME_HEIGHT,
-            zmax=params.HEADBOARD_HEIGHT - params.LEG_FRAME_HEIGHT,
+            zmin=params.FLOOR_Z,
+            zmax=params.FLOOR_Z + params.HEADBOARD_HEIGHT,
         ),
     )
 

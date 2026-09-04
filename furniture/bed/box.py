@@ -9,18 +9,18 @@ for the history of corrections behind each rule below.
 Global axes (plan.md): X = WIDTH, Y = LENGTH (head-to-toe), Z = height.
 
 Construction rules:
-  * Box shell (bottom, 2 side walls, and the top panel in "rail_above_
-    drawer" style) is inset by MDF_THICKNESS from FRAME_WIDTH on each
-    side (BOX_WIDTH, starting at BOX_SHELL_X_MIN) — not flush at
-    0..FRAME_WIDTH, so the Face's overlay lands exactly back on
-    FRAME_WIDTH. Bottom/Top cap the 2 side walls at BOX_INTERIOR_HEIGHT
+  * Box shell (bottom, 2 side walls, and the top panel in the "overlay_
+    under_box"/"inset" DRAWER_STYLEs) is inset by MDF_THICKNESS from
+    FRAME_WIDTH on each side (BOX_WIDTH, starting at BOX_SHELL_X_MIN) —
+    not flush at 0..FRAME_WIDTH, so the Face's overlay lands exactly back
+    on FRAME_WIDTH. Bottom/Top cap the 2 side walls at BOX_INTERIOR_HEIGHT
     (confirmed against the reference spreadsheet's "کناره" row — not
     BOX_HEIGHT). Side walls double as rail-mounting walls. Shell's X
     extremes are open — where the 2 drawers slide out. Top panel's own
-    footprint additionally depends on DRAWER_OVERLAY_STYLE (params.py):
-    full FRAME_WIDTH in "box_over_drawer" (caps the drawer from above),
-    inset BOX_WIDTH in "rail_above_drawer" (an unmodeled rail frame reaches
-    out instead).
+    footprint additionally depends on DRAWER_STYLE (params.py): full
+    FRAME_WIDTH in "overlay_over_box" (caps the drawer from above), inset
+    BOX_WIDTH in "overlay_under_box"/"inset" (an unmodeled rail frame
+    reaches out instead, or nothing does).
   * Drawer depth is RAIL_LENGTH, not derived from FRAME_WIDTH (matches
     drawer-slide sizing convention: depth ≈ slide's nominal length). Since
     RAIL_LENGTH (650) is well under half of FRAME_WIDTH (1800), the 2
@@ -35,17 +35,27 @@ Construction rules:
     clearance; back is trapped between the 2 sides. Width insets
     RAIL_CLEARANCE per side.
   * Drawer_box front is 2 separate panels:
-    - Structural front: flush/inset with the box's open face, same
-      size/role as Back, part of the carcass, hidden once assembled.
-    - Face (نما): attached to the structural front's outer face,
-      protruding by its own thickness (DRAWER_FRONT_OVERLAY_AMOUNT) — the
-      visible, overlaying panel. Taller than the carcass: top edge is
-      DRAWER_TOP_REVEAL_GAP below whatever sits above it per
-      DRAWER_OVERLAY_STYLE (params.py); bottom edge extends SKIRT_HEIGHT
-      below the box's own bottom, doubling as the drawer-side skirt (no
-      separate panel needed there, unlike HAS_END_SKIRT). Narrower than
-      the box's Y-footprint by DRAWER_FACE_GAP (reveal against the
-      neighboring box's Face).
+    - Structural front: same size/role as Back, part of the carcass,
+      hidden once assembled. Sits DRAWER_FRONT_SETBACK (params.py,
+      DRAWER_STYLE-dependent) back from the shell's own open face — 0 in
+      the 2 "overlay_*" styles (flush with the shell), or
+      DRAWER_FRONT_OVERLAY_AMOUNT in "inset" (push-to-open, Model B),
+      which pulls the whole carcass back with it (see add_drawer).
+    - Face (نما): always mounted flush against the structural front's own
+      outer face, protruding by its own thickness
+      (DRAWER_FRONT_OVERLAY_AMOUNT) — the visible panel. In the 2
+      "overlay_*" styles that protrusion reaches past the shell to
+      FRAME_WIDTH, and the Face is taller than the carcass (top edge
+      DRAWER_TOP_REVEAL_GAP below whatever sits above it per DRAWER_STYLE;
+      bottom edge extends SKIRT_HEIGHT below the box's own bottom,
+      doubling as the drawer-side skirt — no separate panel needed there,
+      unlike HAS_END_SKIRT; narrower than the box's Y-footprint by
+      DRAWER_FACE_GAP, a reveal against the neighboring box's Face). In
+      "inset" mode DRAWER_FRONT_SETBACK has already absorbed that
+      protrusion, so the Face lands flush with the shell's open face
+      instead — it then covers the box's actual interior opening (not
+      just the carcass) minus DRAWER_FACE_OPENING_GAP, with no skirt or
+      top-cap duty.
 
 visible/stock_source defaults below are reasonable per-role guesses for one
 isolated box (CONTEXT.md: a judgment call, not a fixed rule) — e.g. a box's
@@ -105,11 +115,19 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
     # --- Box shell ----------------------------------------------------
     # Bottom: X-footprint BOX_WIDTH, inset by t from FRAME_WIDTH (see module
     # docstring). Top's footprint (BOX_TOP_PANEL_WIDTH/BOX_TOP_X_MIN)
-    # instead varies by DRAWER_OVERLAY_STYLE — see params.py.
+    # instead varies by DRAWER_STYLE — see params.py.
+    #
+    # DRAWER_OPENING_EDGE_MATCHES_BODY ("inset" only): Bottom and the 2
+    # side walls border the drawer opening once the Face stops reaching out
+    # to cover them, showing a thin sliver of their own front edge — colored
+    # to read as PVC-banded in BODY_COLOR (params.py) instead of their usual
+    # StockSource-based color. Overrides color only, not StockSource/visible
+    # (see params.py's own comment on this).
+    edge_color = params.BODY_COLOR if params.DRAWER_OPENING_EDGE_MATCHES_BODY else None
     add_panel(
         "Bottom", "Bottom Panel", params.BOX_WIDTH, box_length, t,
         _IDENTITY, App.Vector(params.BOX_SHELL_X_MIN, y_offset, 0),
-        visible=False, stock_source="reclaimed",
+        color=edge_color, visible=False, stock_source="reclaimed",
     )
     add_panel(
         "Top", "Top Panel", params.BOX_TOP_PANEL_WIDTH, box_length, t,
@@ -123,12 +141,12 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
     add_panel(
         "SideWallNear", "Side Wall (Y near)", params.BOX_WIDTH, interior_height, t,
         _ROT_X90, App.Vector(params.BOX_SHELL_X_MIN, y_offset, t),
-        visible=False, stock_source="reclaimed",
+        color=edge_color, visible=False, stock_source="reclaimed",
     )
     add_panel(
         "SideWallFar", "Side Wall (Y far)", params.BOX_WIDTH, interior_height, t,
         _ROT_X90, App.Vector(params.BOX_SHELL_X_MIN, y_offset + box_length - t, t),
-        visible=False, stock_source="reclaimed",
+        color=edge_color, visible=False, stock_source="reclaimed",
     )
 
     # --- Drawer_box carcasses ------------------------------------------
@@ -138,8 +156,8 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
     # actually overlays.
     drawer_depth = params.RAIL_LENGTH
     drawer_width = (box_length - 2 * t) - 2 * params.RAIL_CLEARANCE
-    # DRAWER_HEIGHT_REDUCTION (params.py, DRAWER_OVERLAY_STYLE-dependent)
-    # makes room for the unmodeled rail-mount frame in "rail_above_drawer".
+    # DRAWER_HEIGHT_REDUCTION (params.py, DRAWER_STYLE-dependent) makes room
+    # for the unmodeled rail-mount frame in "overlay_under_box"/"inset".
     drawer_side_height = (
         interior_height - params.DRAWER_BOTTOM_THICKNESS
         - params.DRAWER_TOP_REVEAL_GAP
@@ -154,10 +172,16 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
         (carcass grows in +X from x_min), -1 if it opens from the shell's
         far X face (carcass grows in -X, so x_min is actually the
         carcass's max)."""
+        # DRAWER_FRONT_SETBACK (params.py, DRAWER_STYLE-dependent) moves the
+        # whole carcass back from the shell's open face by the Face's own
+        # thickness in "inset" mode, so the Face's protrusion (added below)
+        # lands flush with the shell instead of past it. Zero in the 2
+        # "overlay_*" styles.
+        setback = params.DRAWER_FRONT_SETBACK
         if x_sign > 0:
-            carcass_x_min = x_min
+            carcass_x_min = x_min + setback
         else:
-            carcass_x_min = x_min - drawer_depth
+            carcass_x_min = x_min - setback - drawer_depth
 
         add_panel(
             f"{name_prefix}_Bottom", f"{drawer_label} - Bottom",
@@ -178,10 +202,11 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
             App.Vector(carcass_x_min, drawer_y_min + drawer_width - t, drawer_carcass_z),
             visible=False, stock_source="reclaimed",
         )
-        # Structural front: flush/inset with the box's open X face, part of
-        # the carcass (same as Back, mirrored), hidden once the Face is
-        # attached. Not where the overlay happens.
-        front_x = x_min if x_sign > 0 else x_min - t
+        # Structural front: at the carcass's own opening end (which
+        # DRAWER_FRONT_SETBACK, above, may have moved back from the shell's
+        # open face), part of the carcass (same as Back, mirrored), hidden
+        # once the Face is attached. Not where the overlay happens.
+        front_x = carcass_x_min if x_sign > 0 else carcass_x_min + drawer_depth - t
         back_x = carcass_x_min + drawer_depth - t if x_sign > 0 else carcass_x_min
         add_panel(
             f"{name_prefix}_Front", f"{drawer_label} - Structural Front",
@@ -195,25 +220,44 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
             _ROT_Y90, App.Vector(back_x, drawer_y_min + t, drawer_carcass_z),
             visible=False, stock_source="reclaimed",
         )
-        # Face (نما): attached to the structural front's outer face,
-        # protruding by DRAWER_FRONT_OVERLAY_AMOUNT — the visible,
-        # overlaying panel. Bottom edge extends SKIRT_HEIGHT below the
-        # box's own bottom (doubles as the drawer-side skirt). Narrower
-        # than the box's Y-footprint by DRAWER_FACE_GAP (reveal against
-        # the neighboring box's Face). Top edge sits DRAWER_TOP_REVEAL_GAP
-        # below DRAWER_FACE_TOP_REF_Z (params.py, DRAWER_OVERLAY_STYLE-
-        # dependent) — taller than the carcass by design, not just capped
-        # at the carcass's own top.
+        # Face (نما): always mounted flush against the structural front's own
+        # outer face and protruding outward by DRAWER_FRONT_OVERLAY_AMOUNT —
+        # DRAWER_FRONT_SETBACK (above) is what actually decides whether that
+        # protrusion reaches past the shell (the 2 "overlay_*" styles) or
+        # lands flush with it ("inset"), by moving the front itself back
+        # first.
         overlay = params.DRAWER_FRONT_OVERLAY_AMOUNT
-        face_x = x_min - overlay if x_sign > 0 else x_min
-        face_top_z = params.DRAWER_FACE_TOP_REF_Z - params.DRAWER_TOP_REVEAL_GAP
-        face_height = face_top_z + params.SKIRT_HEIGHT
-        face_width = box_length - params.DRAWER_FACE_GAP
-        face_y_min = y_offset + params.DRAWER_FACE_GAP / 2
+        face_x = (front_x - overlay) if x_sign > 0 else (front_x + t)
+        if params.DRAWER_FRONT_IS_OVERLAY:
+            # Model A / "overlay_under_box": bottom edge extends
+            # SKIRT_HEIGHT below the box's own bottom (doubles as the
+            # drawer-side skirt). Narrower than the box's Y-footprint by
+            # DRAWER_FACE_GAP (reveal against the neighboring box's Face).
+            # Top edge sits DRAWER_TOP_REVEAL_GAP below DRAWER_FACE_TOP_REF_Z
+            # (params.py, DRAWER_STYLE-dependent) — taller than the carcass
+            # by design, not just capped at the carcass's own top.
+            face_top_z = params.DRAWER_FACE_TOP_REF_Z - params.DRAWER_TOP_REVEAL_GAP
+            face_height = face_top_z + params.SKIRT_HEIGHT
+            face_width = box_length - params.DRAWER_FACE_GAP
+            face_y_min = y_offset + params.DRAWER_FACE_GAP / 2
+            face_z_min = -params.SKIRT_HEIGHT
+        else:
+            # "inset" (Model B, push-to-open): its only job is covering the
+            # hole in the box's own front face, so it's sized to the box's
+            # actual interior opening (BOX_INTERIOR_HEIGHT tall, between the
+            # 2 side walls wide) — not the (narrower) drawer carcass behind
+            # it — minus DRAWER_FACE_OPENING_GAP so it doesn't rub against
+            # the shell. No skirt/top-cap duty (open space stays open below,
+            # per CONTEXT.md).
+            gap = params.DRAWER_FACE_OPENING_GAP
+            face_height = interior_height - gap
+            face_width = (box_length - 2 * t) - gap
+            face_y_min = y_offset + t + gap / 2
+            face_z_min = t + gap / 2
         add_panel(
             f"{name_prefix}_Face", f"{drawer_label} - Face",
             face_height, face_width, overlay,
-            _ROT_Y90, App.Vector(face_x, face_y_min, -params.SKIRT_HEIGHT),
+            _ROT_Y90, App.Vector(face_x, face_y_min, face_z_min),
             color=params.DRAWER_FRONT_COLOR, visible=True, stock_source="new",
         )
 
@@ -228,16 +272,18 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
 
     # --- Internal transverse walls (one behind each drawer) -------------
     # Purely structural (keeps the top panel from sagging over the
-    # unsupported span), RAIL_BACK_CLEARANCE behind each drawer's back.
+    # unsupported span), RAIL_BACK_CLEARANCE behind each drawer's actual
+    # back — which DRAWER_FRONT_SETBACK (above) may have pushed further in.
     # The gap between the 2 walls is left open.
-    wall1_x_min = shell_x_min + drawer_depth + params.RAIL_BACK_CLEARANCE
+    setback = params.DRAWER_FRONT_SETBACK
+    wall1_x_min = shell_x_min + setback + drawer_depth + params.RAIL_BACK_CLEARANCE
     add_panel(
         "InternalWallDrawer1", "Internal Wall (behind Drawer 1)",
         interior_height, box_length - 2 * t, t,
         _ROT_Y90, App.Vector(wall1_x_min, y_offset + t, t),
         visible=False, stock_source="reclaimed",
     )
-    wall2_x_max = (shell_x_max - drawer_depth) - params.RAIL_BACK_CLEARANCE
+    wall2_x_max = (shell_x_max - setback - drawer_depth) - params.RAIL_BACK_CLEARANCE
     add_panel(
         "InternalWallDrawer2", "Internal Wall (behind Drawer 2)",
         interior_height, box_length - 2 * t, t,

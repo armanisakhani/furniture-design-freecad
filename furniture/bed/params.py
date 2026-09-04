@@ -22,12 +22,15 @@ import os
 # parser rejects unrecognized flags unpredictably, but env vars pass
 # through untouched to every entry point — freecadcmd, the Makefile,
 # view_bed.sh's GUI-launch path — with no extra plumbing.)
-# Either knob can still be overridden on top of the selected style with
-# its own same-named env var (wins over the style's value):
-# `DRAWER_OVERLAY_STYLE=rail_above_drawer`, `MATTRESS_TO_FRAME_GAP_WIDTH=50`.
+# Any knob can still be overridden on top of the selected style with its
+# own same-named env var (wins over the style's value):
+# `DRAWER_STYLE=inset`, `MATTRESS_TO_FRAME_GAP_WIDTH=50`, `HAS_LEG_FRAME=0`.
 STYLES = {
-    1: dict(drawer_overlay_style="box_over_drawer", mattress_gap_width=0),
-    2: dict(drawer_overlay_style="rail_above_drawer", mattress_gap_width=100),
+    1: dict(drawer_style="overlay_over_box", mattress_gap_width=0, has_leg_frame=True),
+    2: dict(drawer_style="overlay_under_box", mattress_gap_width=100, has_leg_frame=True),
+    3: dict(drawer_style="inset", mattress_gap_width=100, has_leg_frame=True),
+    4: dict(drawer_style="inset", mattress_gap_width=0, has_leg_frame=True),
+    5: dict(drawer_style="inset", mattress_gap_width=0, has_leg_frame=False),
 }
 
 
@@ -36,10 +39,12 @@ def _resolve_style():
     if style_id not in STYLES:
         raise ValueError(f"Unknown STYLE={style_id}; known styles: {sorted(STYLES)}")
     values = dict(STYLES[style_id])
-    if os.environ.get("DRAWER_OVERLAY_STYLE"):
-        values["drawer_overlay_style"] = os.environ["DRAWER_OVERLAY_STYLE"]
+    if os.environ.get("DRAWER_STYLE"):
+        values["drawer_style"] = os.environ["DRAWER_STYLE"]
     if os.environ.get("MATTRESS_TO_FRAME_GAP_WIDTH"):
         values["mattress_gap_width"] = int(os.environ["MATTRESS_TO_FRAME_GAP_WIDTH"])
+    if os.environ.get("HAS_LEG_FRAME"):
+        values["has_leg_frame"] = os.environ["HAS_LEG_FRAME"] not in ("0", "false", "False")
     return values
 
 
@@ -107,43 +112,61 @@ DRAWERS_PER_BOX = 2
 
 DRAWER_BOTTOM_THICKNESS = 3  # 3mm fiber board, not structural MDF
 
-# "inset": drawer front flush inside the box opening. "overlay": drawer
-# front proud of the box. Building overlay first; inset stays supported
-# through this same parameter, just built second.
-DRAWER_FRONT_MODE = "overlay"
+# How the drawer meets the box — one parameter covering everything that
+# used to be 2 separate, independently-settable knobs (DRAWER_OVERLAY_STYLE
+# + DRAWER_FRONT_MODE), collapsed once it became clear only 3 of their 2x2
+# combinations are real design intents (the 4th, a flush inset front capped
+# by an overhanging Top panel, was never used and doesn't correspond to
+# anything worth building):
+#   "overlay_over_box" (Model A): front (its Face) protrudes past the shell
+#     to FRAME_WIDTH — no handle, opened by hand from underneath. The box's
+#     own Top panel also reaches out to FRAME_WIDTH and caps the drawer's
+#     Face from above; no separate rail-mount frame consumes height.
+#   "overlay_under_box": front also protrudes to FRAME_WIDTH, but the Top
+#     panel instead stays inset with the rest of the shell (BOX_WIDTH) — an
+#     unmodeled rail-mount frame sits above the drawer and reaches out to
+#     meet the Face instead ("under": the drawer sits under the box's own
+#     top plane, not capped by it), so the drawer carcass loses one
+#     MDF_THICKNESS of height to make room for that frame.
+#   "inset" (Model B, push-to-open): front doesn't protrude at all — it
+#     lands flush with the shell's own open face instead, sized to fill the
+#     box's actual interior opening (its only job is covering the hole in
+#     the box's face, unrelated to how wide the mechanism behind it happens
+#     to be). No handle: opened by pushing the front. Always pairs with the
+#     Top panel staying inset, same reasoning as "overlay_under_box" —
+#     nothing reaches past the shell here either.
+# Set per style, see STYLES above.
+DRAWER_STYLE = _style["drawer_style"]  # "overlay_over_box" / "overlay_under_box" / "inset" — set per style, see STYLES above
 
-# The Drawer_box's front is 2 separate panels: a structural front (flush
-# with the box opening, part of the carcass, hidden once assembled) plus
-# a separate Face panel (نما) attached to it — the one actually visible
-# and overlaying. DRAWER_FRONT_OVERLAY_AMOUNT is the Face's own board
-# thickness: mounted flush against the structural front, it protrudes by
-# its full thickness, so that thickness IS the overlay amount.
+# The Drawer_box's front is 2 separate panels: a structural front (part of
+# the carcass, hidden once assembled) plus a separate Face panel (نما)
+# attached to it — the one actually visible. DRAWER_FRONT_OVERLAY_AMOUNT is
+# the Face's own board thickness: mounted flush against the structural
+# front, it protrudes by its full thickness in the 2 "overlay_*" styles —
+# that thickness IS the overlay amount.
 DRAWER_FRONT_OVERLAY_AMOUNT = MDF_THICKNESS  # TBD
 
 # Reveal gap between the Face panels of 2 adjacent boxes (Y), so they
 # don't rub. Split evenly: each Face is centered in its own box's
-# Y-footprint, inset by half this gap on each side.
+# Y-footprint, inset by half this gap on each side. The 2 "overlay_*"
+# styles only — see box.py's add_drawer for why "inset" doesn't need it.
 DRAWER_FACE_GAP = 3  # TBD: placeholder reveal, no real number chosen yet
 
-# In "overlay" mode, 2 physical ways the drawer meets the box, picked via
-# DRAWER_OVERLAY_STYLE:
-#   "box_over_drawer" (default) — the box's own Top panel extends to
-#     FRAME_WIDTH and caps the drawer's Face from above; no separate
-#     rail-mount frame consumes height. Matches the user's explicit
-#     request that the Top panel itself do this job.
-#   "rail_above_drawer" — an unmodeled rail-mount frame sits on top of
-#     the drawer and reaches out to meet the Face instead; the Top panel
-#     stays flush with the rest of the shell (BOX_WIDTH) and the drawer
-#     carcass loses one MDF_THICKNESS of height for that frame.
-# In both styles the box shell itself (Bottom, 2 side walls, drawer
-# carcasses) is inset from FRAME_WIDTH by MDF_THICKNESS on each X side —
-# BOX_WIDTH, below. The Face's own overlay is what reaches back out to
-# exactly FRAME_WIDTH.
-DRAWER_OVERLAY_STYLE = _style["drawer_overlay_style"]  # or "rail_above_drawer" — set per style, see STYLES above
+# "inset" style only: reveal gap between the Face and the box's own
+# opening edges — top/bottom (against Top/Bottom) and each side (against
+# the 2 side walls) — so the Face nearly fills the box's actual interior
+# opening (BOX_INTERIOR_HEIGHT tall, box_length - 2*MDF_THICKNESS wide)
+# with only a minimal clearance to avoid rubbing during push-to-open
+# operation, rather than the (much narrower) drawer carcass's own
+# footprint. Distinct from DRAWER_FACE_GAP above (that one's the reveal
+# BETWEEN 2 adjacent boxes' Faces, along Y only) — this one is WITHIN one
+# box's own opening, both axes.
+DRAWER_FACE_OPENING_GAP = 3  # TBD: placeholder reveal, no real number chosen yet
 
 # Box shell's own X footprint — always inset from FRAME_WIDTH by
-# MDF_THICKNESS on each side, regardless of DRAWER_OVERLAY_STYLE. The
-# Face panel's overlay closes this gap back up to FRAME_WIDTH (box.py).
+# MDF_THICKNESS on each side, regardless of DRAWER_STYLE. The Face panel's
+# overlay closes this gap back up to FRAME_WIDTH in the 2 "overlay_*"
+# styles (box.py).
 BOX_WIDTH = FRAME_WIDTH - 2 * MDF_THICKNESS
 
 # Box shell's X=0 edge, relative to FRAME_WIDTH's own X=0 origin — always
@@ -158,41 +181,101 @@ BOX_SHELL_X_MIN = MDF_THICKNESS
 # modeled), the full allowance is put here, above.
 DRAWER_TOP_REVEAL_GAP = 6  # TBD: matches ball-bearing side-mount convention, confirm w/ datasheet
 
-# Everything that varies by DRAWER_OVERLAY_STYLE, computed together here
-# — one seam, one branch per style — instead of re-branching on the style
-# string at each dependent call site (box.py used to carry 2 of its own
-# copies of this check). See box.py's module docstring for the physical
-# reasoning behind each style.
-def _drawer_overlay_geometry(style):
-    if style == "box_over_drawer":
+# Everything that varies by DRAWER_STYLE, computed together here — one
+# seam, one branch per style — instead of re-branching on the style string
+# at each dependent call site. See box.py's module docstring for the
+# physical reasoning behind each style.
+def _drawer_style_geometry(style):
+    if style == "overlay_over_box":
         return dict(
             top_panel_width=FRAME_WIDTH,
             top_x_min=0,
             drawer_height_reduction=0,
             face_top_ref_z=BOX_HEIGHT - MDF_THICKNESS,
+            front_setback=0,
+            front_is_overlay=True,
         )
-    elif style == "rail_above_drawer":
+    elif style == "overlay_under_box":
         return dict(
             top_panel_width=BOX_WIDTH,
             top_x_min=BOX_SHELL_X_MIN,
             drawer_height_reduction=MDF_THICKNESS,
             face_top_ref_z=BOX_HEIGHT,
+            front_setback=0,
+            front_is_overlay=True,
         )
-    raise ValueError(f"Unknown DRAWER_OVERLAY_STYLE: {style!r}")
+    elif style == "inset":
+        return dict(
+            # Unlike the other 2 styles, NOTHING here protrudes past the
+            # shell to bridge the BOX_WIDTH -> FRAME_WIDTH gap: "inset"'s
+            # own Face deliberately doesn't (that's the point of "inset"),
+            # and unlike "overlay_under_box" there's no Face spanning
+            # almost the box's whole length to do it incidentally either.
+            # So the Top panel — the one thing actually bearing the
+            # mattress — has to reach FRAME_WIDTH itself here, exactly like
+            # "overlay_over_box", or the mattress silently overhangs
+            # unsupported by MDF_THICKNESS on each long edge for the bed's
+            # entire length (invisible whenever MATTRESS_TO_FRAME_GAP_WIDTH
+            # > 0 already tucks the mattress in short of BOX_WIDTH anyway —
+            # caught once STYLE=4 set that gap to 0). Bottom and the 2 side
+            # walls stay inset (BOX_WIDTH) regardless — they don't bear the
+            # mattress, and their now-visible edge is the intended frame
+            # around the recessed drawer (DRAWER_OPENING_EDGE_MATCHES_BODY).
+            top_panel_width=FRAME_WIDTH,
+            top_x_min=0,
+            drawer_height_reduction=MDF_THICKNESS,
+            face_top_ref_z=BOX_HEIGHT - MDF_THICKNESS,  # matches the "Top reaches FRAME_WIDTH" family above; unused by "inset" Face sizing itself
+            front_setback=DRAWER_FRONT_OVERLAY_AMOUNT,
+            front_is_overlay=False,
+        )
+    raise ValueError(
+        f"Unknown DRAWER_STYLE: {style!r}; known styles: "
+        "overlay_over_box, overlay_under_box, inset"
+    )
 
 
-_overlay_geometry = _drawer_overlay_geometry(DRAWER_OVERLAY_STYLE)
-# Top panel's X footprint/start: flush with FRAME_WIDTH (caps the drawer
-# from above) in "box_over_drawer", or matching the shell inset in
-# "rail_above_drawer" (unmodeled rail frame reaches out instead).
-BOX_TOP_PANEL_WIDTH = _overlay_geometry["top_panel_width"]
-BOX_TOP_X_MIN = _overlay_geometry["top_x_min"]
+_drawer_geometry = _drawer_style_geometry(DRAWER_STYLE)
+# Top panel's X footprint/start: flush with FRAME_WIDTH — bearing the
+# mattress, it must always reach the true frame edge — in "overlay_over_
+# box" and "inset" (nothing else bridges the gap in "inset", see above);
+# matches the shell inset instead in "overlay_under_box", where the Face
+# already bridges it (spanning nearly the box's whole length).
+BOX_TOP_PANEL_WIDTH = _drawer_geometry["top_panel_width"]
+BOX_TOP_X_MIN = _drawer_geometry["top_x_min"]
 # Height the drawer carcass gives up for the unmodeled rail-mount frame in
-# "rail_above_drawer" (0 in "box_over_drawer"). Used by box.py.
-DRAWER_HEIGHT_REDUCTION = _overlay_geometry["drawer_height_reduction"]
-# Z reference the Face's top edge measures DRAWER_TOP_REVEAL_GAP down from.
-# Used by box.py.
-DRAWER_FACE_TOP_REF_Z = _overlay_geometry["face_top_ref_z"]
+# "overlay_under_box"/"inset" (0 in "overlay_over_box"). Used by box.py.
+DRAWER_HEIGHT_REDUCTION = _drawer_geometry["drawer_height_reduction"]
+# Z reference the Face's top edge measures DRAWER_TOP_REVEAL_GAP down from
+# — "overlay_*" styles only. Used by box.py.
+DRAWER_FACE_TOP_REF_Z = _drawer_geometry["face_top_ref_z"]
+# How far the structural front — and with it the whole carcass behind it
+# (bottom/sides/back, and by extension where the internal transverse wall
+# sits) — is set back from the shell's own open-face plane, along the
+# drawer's opening axis (X). The Face always mounts flush against the
+# front's own outer face and protrudes outward by DRAWER_FRONT_OVERLAY_AMOUNT
+# (box.py); "inset"'s setback absorbs that protrusion entirely so the
+# Face's outer surface lands flush with the shell instead of past it — the
+# numeric answer to "the drawer needs to sit further back" for
+# push-to-open.
+DRAWER_FRONT_SETBACK = _drawer_geometry["front_setback"]
+# Whether the Face protrudes past the shell ("overlay_over_box"/
+# "overlay_under_box") or lands flush with it ("inset"). Used by box.py to
+# pick Face sizing (carcass-driven vs. box-opening-driven) and by
+# HAS_DRAWER_SIDE_SKIRT/DRAWER_OPENING_EDGE_MATCHES_BODY below.
+DRAWER_FRONT_IS_OVERLAY = _drawer_geometry["front_is_overlay"]
+
+# "inset" style only: the box shell panels bordering the drawer opening
+# (Bottom, the 2 side walls — Top is already always visible/new) show a
+# thin sliver of their own front-facing cut edge around the Face once the
+# Face stops reaching out to cover them (see box.py's add_drawer and
+# create_box). That edge would carry PVC banding (see CONTEXT.md) to hide
+# the raw MDF core — modeled here as a color override only (no separate
+# PVC panel object), so it reads as banded to match BODY_COLOR instead of
+# showing each panel's own StockSource-based color (their usual
+# RECLAIMED_MDF_COLOR/white). Does not change StockSource/PanelVisible —
+# only a thin edge is actually visible, not the whole panel's face, so
+# there's no reason to re-source the whole board as new stock.
+DRAWER_OPENING_EDGE_MATCHES_BODY = not DRAWER_FRONT_IS_OVERLAY
 
 # Drawer slide rail. Reference notes a 600 or 650mm nominal rail; exact
 # model/brand and its datasheet clearance are not chosen yet.
@@ -226,11 +309,13 @@ RAIL_POSITION_Z = 15  # TBD: confirm against chosen rail + drawer construction
 # the floor — unrelated to drawer position (the drawer lives up near the
 # top of the box; see DRAWER_TOP_REVEAL_GAP, a separate parameter).
 
-# Skirt on the two long (drawer-carrying) faces of a box. Always on —
-# this is the bed's most visible face. Only covers part of
-# LEG_FRAME_HEIGHT; the rest stays open below it for hand clearance
-# under the drawer front.
-HAS_DRAWER_SIDE_SKIRT = True
+# Skirt on the two long (drawer-carrying) faces of a box. Meaningful only
+# in the 2 "overlay_*" DRAWER_STYLEs, where the Face panel's own reach
+# below the box's bottom does this job (no separate panel — see
+# CONTEXT.md). In "inset" (Model B, push-to-open) there is no drawer-side
+# skirt at all: the Face doesn't protrude or reach down, so that space
+# stays open.
+HAS_DRAWER_SIDE_SKIRT = DRAWER_FRONT_IS_OVERLAY
 
 # Skirt on the two short (head/foot) end faces, which have no drawer.
 # Togglable — purely for visual continuity around the base, not
@@ -251,15 +336,36 @@ SKIRT_THICKNESS = 16  # TBD
 # from underneath, so the bed needs to be raised for finger clearance) ----
 LEG_FRAME_HEIGHT = 100  # TBD: driven by hand-clearance requirement
 
+# Whether the bed actually sits on a raised leg/support frame at all. Only
+# meaningful to turn off for DRAWER_STYLE="inset" (push-to-open never
+# needs to reach underneath the drawer, so there's no hand-clearance
+# reason to raise the bed) — enforced below, since an "overlay_*" style
+# with no leg frame would leave no way to open its handle-less drawers by
+# hand. Set per style, see STYLES above.
+HAS_LEG_FRAME = _style["has_leg_frame"]
+if not HAS_LEG_FRAME and DRAWER_STYLE != "inset":
+    raise ValueError(
+        f'HAS_LEG_FRAME=False requires DRAWER_STYLE="inset" '
+        f"(got {DRAWER_STYLE!r}) — the other styles need the leg frame's "
+        "hand clearance to open their handle-less drawers."
+    )
+
+# The actual floor's Z coordinate. Normally below the box's own bottom
+# (Z=0) by LEG_FRAME_HEIGHT; with no leg frame, the box's own bottom IS
+# the floor. bed.py's EndFaceFoot/Headboard measure down from/to this,
+# not a hardcoded -LEG_FRAME_HEIGHT, so they land on the actual floor
+# either way instead of dangling in mid-air or burying themselves in it.
+FLOOR_Z = -LEG_FRAME_HEIGHT if HAS_LEG_FRAME else 0
+
 # --- Headboard (تاج) -----------------------------------------------------
 # A single MDF panel standing at the head end (Y=0 — the end that butts
 # against the room's wall), attached to the outer face of the first
 # box's SideWallNear, same overlay/attachment pattern as EndFaceFoot but
 # mirrored to the other end of the bed (see create_headboard in bed.py).
-# Height is measured from the actual floor (Z = -LEG_FRAME_HEIGHT, where
-# the leg/support frame ends) up to the panel's own top edge — NOT from
-# the box's own bottom (Z=0), which is why this is a separate param
-# rather than derived from BOX_HEIGHT/SKIRT_HEIGHT.
+# Height is measured from the actual floor (Z = FLOOR_Z, above) up to the
+# panel's own top edge — NOT from the box's own bottom (Z=0), which is why
+# this is a separate param rather than derived from BOX_HEIGHT/
+# SKIRT_HEIGHT.
 HEADBOARD_HEIGHT = 1100  # confirmed: 1.1m total, floor to top edge
 
 # --- Material / appearance -----------------------------------------------
