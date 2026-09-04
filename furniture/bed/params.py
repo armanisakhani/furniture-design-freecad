@@ -109,6 +109,26 @@ BOX_HEIGHT = BOX_INTERIOR_HEIGHT + 2 * MDF_THICKNESS
 # thickness: MDF_THICKNESS (16) + 2 * PVC_THICKNESS (2 + 2) = 20.
 PVC_THICKNESS = 2
 
+# Whether the Box shell's Bottom + 2 long side walls are cut from new stock
+# too (same as the Top panel, which is always new — it bears the mattress)
+# instead of reclaimed scrap. A pure cost/logistics choice, independent of
+# DRAWER_STYLE/STYLE — off by default (only Top is new; Bottom/side walls
+# are reclaimed to save cost, see box.py's create_box). Env var only (not
+# part of STYLES) since it's a "how much do I want to spend" toggle
+# orthogonal to the style presets: `BOX_SHELL_ALL_NEW=1 make cutlist-bed`.
+BOX_SHELL_ALL_NEW = os.environ.get("BOX_SHELL_ALL_NEW", "") not in ("", "0", "false", "False")
+
+# Swap BODY_COLOR/DRAWER_FRONT_COLOR (colors.py) on the single middle box
+# only (box_index == BOX_COUNT // 2, and only when BOX_COUNT is odd — with
+# an even count there's no single middle box, so this has no effect) — e.g.
+# preview the assembled bed with the middle box's body in the drawer-front
+# color and vice versa, without changing the color scheme everywhere. Env
+# var only (a one-off preview toggle, not a style/palette choice):
+# `MIDDLE_BOX_REVERSE_COLOR=1 make view-bed`. See box.py's create_box.
+MIDDLE_BOX_REVERSE_COLOR = os.environ.get("MIDDLE_BOX_REVERSE_COLOR", "") not in (
+    "", "0", "false", "False",
+)
+
 # --- Drawer -----------------------------------------------------------
 DRAWERS_PER_BOX = 2
 

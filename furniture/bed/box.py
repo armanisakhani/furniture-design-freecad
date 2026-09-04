@@ -98,6 +98,19 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
     box_height = params.BOX_HEIGHT
     interior_height = params.BOX_INTERIOR_HEIGHT
 
+    # MIDDLE_BOX_REVERSE_COLOR (params.py): on the single middle box only
+    # (odd BOX_COUNT, box_index == BOX_COUNT // 2), swap body/drawer-front
+    # colors instead of the usual params.BODY_COLOR/DRAWER_FRONT_COLOR.
+    is_middle_box = (
+        params.BOX_COUNT % 2 == 1 and box_index == params.BOX_COUNT // 2
+    )
+    if params.MIDDLE_BOX_REVERSE_COLOR and is_middle_box:
+        body_color = params.DRAWER_FRONT_COLOR
+        drawer_front_color = params.BODY_COLOR
+    else:
+        body_color = params.BODY_COLOR
+        drawer_front_color = params.DRAWER_FRONT_COLOR
+
     panels = []
 
     def add_panel(obj_name, label, length, width, thickness, rotation,
@@ -114,7 +127,7 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
             material=material, color=color, visible=visible,
             stock_source=stock_source,
             reclaimed_color=params.RECLAIMED_MDF_COLOR,
-            new_color=params.BODY_COLOR,
+            new_color=body_color,
         )
         panels.append(obj)
         return obj
@@ -130,13 +143,18 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
     # to read as PVC-banded in BODY_COLOR (params.py) instead of their usual
     # StockSource-based color. Overrides color only, not StockSource/visible
     # (see params.py's own comment on this).
-    edge_color = params.BODY_COLOR if params.DRAWER_OPENING_EDGE_MATCHES_BODY else None
+    edge_color = body_color if params.DRAWER_OPENING_EDGE_MATCHES_BODY else None
     shell_panel_width = params.BOX_SHELL_PANEL_WIDTH
     shell_panel_x_min = params.BOX_SHELL_PANEL_X_MIN
+    # BOX_SHELL_ALL_NEW (params.py): a cost/logistics toggle, independent of
+    # the above — whether Bottom + the 2 side walls are cut from new stock
+    # (like Top, always new) instead of reclaimed scrap. Doesn't touch
+    # edge_color/visible/footprint, only which stock they're cut from.
+    shell_stock_source = "new" if params.BOX_SHELL_ALL_NEW else "reclaimed"
     add_panel(
         "Bottom", "Bottom Panel", shell_panel_width, box_length, t,
         _IDENTITY, App.Vector(shell_panel_x_min, y_offset, 0),
-        color=edge_color, visible=False, stock_source="reclaimed",
+        color=edge_color, visible=False, stock_source=shell_stock_source,
     )
     add_panel(
         "Top", "Top Panel", params.BOX_TOP_PANEL_WIDTH, box_length, t,
@@ -152,12 +170,12 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
     add_panel(
         "SideWallNear", "Side Wall (Y near)", shell_panel_width, interior_height, t,
         _ROT_X90, App.Vector(shell_panel_x_min, y_offset, t),
-        color=edge_color, visible=False, stock_source="reclaimed",
+        color=edge_color, visible=False, stock_source=shell_stock_source,
     )
     add_panel(
         "SideWallFar", "Side Wall (Y far)", shell_panel_width, interior_height, t,
         _ROT_X90, App.Vector(shell_panel_x_min, y_offset + box_length - t, t),
-        color=edge_color, visible=False, stock_source="reclaimed",
+        color=edge_color, visible=False, stock_source=shell_stock_source,
     )
 
     # --- Drawer_box carcasses ------------------------------------------
@@ -269,7 +287,7 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
             f"{name_prefix}_Face", f"{drawer_label} - Face",
             face_height, face_width, overlay,
             _ROT_Y90, App.Vector(face_x, face_y_min, face_z_min),
-            color=params.DRAWER_FRONT_COLOR, visible=True, stock_source="new",
+            color=drawer_front_color, visible=True, stock_source="new",
         )
 
     # Drawer carcasses align with the (inset) shell edges, not raw
