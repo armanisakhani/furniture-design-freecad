@@ -14,6 +14,28 @@ the first build — this whole module is a "build it so I can see it, then
 I'll comment" first draft, styled after references/reference-page8.png
 (look only, not its hardware/connection details — this design's own
 fastening is screws, per the user).
+
+Revised 2026-09-05: drawer Faces are Inset, not Full Overlay — they sit
+BETWEEN the 2 side panels (DRAWER_FACE_WIDTH) and land flush with the
+shell's own front face, instead of protruding past it and covering the
+sides' own front edge. The Top panel is likewise inset between the sides
+(TOP_PANEL_WIDTH) rather than resting on top of them. Both changes are in
+service of the same visual goal, straight from the user's own brief: the
+2 side panels must stay visible as a continuous vertical strip on the
+left and right in a front view (2-tone body/drawer-front look), and the
+Top panel's own front edge stays flush/open — only its left and right
+ends get a small lip, SIDE_TOP_LIP, above the Top panel's own surface
+(the 2 side panels simply run a bit taller than the Top panel — no
+separate frame or tray piece).
+
+Also revised 2026-09-05: the topmost drawer's own Face rises all the way
+up to be flush with the Left/Right/Back panels' own top edge (see
+TOP_DRAWER_FACE_EXTRA_HEIGHT), instead of stopping at the Top panel's
+underside like every other drawer — the Top panel's own front edge
+retreats a little (TOP_PANEL_Y_MIN) to make room. Per-drawer Face color
+now comes from DRAWER_COLOR_PATTERN, a string with one '0'/'1' digit per
+drawer (top to bottom) — replaces the old ALTERNATE_DRAWER_COLORS
+boolean, per the user's own suggested config format.
 """
 
 import os
@@ -22,21 +44,21 @@ import colors
 
 # --- Style presets ----------------------------------------------------
 # Mirrors furniture/bed/params.py's STYLES pattern: select with the STYLE
-# env var, e.g. `STYLE=2 make view-dresser`. Style 1 is today's default
-# (body brown, drawer fronts misty); style 2 swaps the 2 roles (body
-# misty, drawer fronts brown) — same idea as furniture/bed's
-# MIDDLE_BOX_REVERSE_COLOR toggle, just picked by a style number here
-# since the dresser has no other structural variant yet to hang it off of.
-# Style 3 additionally alternates each drawer's own Face between the 2
-# colors instead of every Face sharing one (see ALTERNATE_DRAWER_COLORS
-# below). Both reverse_colors and alternate_drawer_colors can still be
-# overridden on top of the selected style with their own same-named env
-# var (REVERSE_COLORS / ALTERNATE_DRAWER_COLORS), same as STYLE's own
-# per-knob overrides.
+# env var, e.g. `STYLE=2 make view-dresser`. main_color names which of
+# colors.COLOR_PAIR is the body color — the other one becomes the drawer
+# accent color automatically (see MAIN_COLOR/ALTERNATE_COLOR below).
+# Style 1 is today's default (body brown, drawer fronts misty); style 2
+# swaps the 2 roles (body misty, drawer fronts brown). Style 3 also
+# alternates each drawer's own Face between the 2 colors instead of every
+# Face sharing one (see DRAWER_COLOR_PATTERN below). Both main_color and
+# drawer_color_pattern can still be overridden on top of the selected
+# style with their own same-named env var (MAIN_COLOR /
+# DRAWER_COLOR_PATTERN), same as STYLE's own per-knob overrides.
 STYLES = {
-    1: dict(reverse_colors=False, alternate_drawer_colors=False),
-    2: dict(reverse_colors=True, alternate_drawer_colors=False),
-    3: dict(reverse_colors=True, alternate_drawer_colors=True),
+    1: dict(main_color="brown", drawer_color_pattern="0000"),
+    2: dict(main_color="misty", drawer_color_pattern="0000"),
+    3: dict(main_color="misty", drawer_color_pattern="0101"),
+    4: dict(main_color="misty", drawer_color_pattern="1000"),
 }
 
 
@@ -45,21 +67,31 @@ def _resolve_style():
     if style_id not in STYLES:
         raise ValueError(f"Unknown STYLE={style_id}; known styles: {sorted(STYLES)}")
     values = dict(STYLES[style_id])
-    if os.environ.get("REVERSE_COLORS"):
-        values["reverse_colors"] = os.environ["REVERSE_COLORS"] not in ("0", "false", "False")
-    if os.environ.get("ALTERNATE_DRAWER_COLORS"):
-        values["alternate_drawer_colors"] = os.environ["ALTERNATE_DRAWER_COLORS"] not in ("0", "false", "False")
+    if os.environ.get("MAIN_COLOR"):
+        values["main_color"] = os.environ["MAIN_COLOR"]
+    if os.environ.get("DRAWER_COLOR_PATTERN"):
+        values["drawer_color_pattern"] = os.environ["DRAWER_COLOR_PATTERN"]
     return values
 
 
 _style = _resolve_style()
-REVERSE_COLORS = _style["reverse_colors"]
-# Whether each drawer's own Face alternates between DRAWER_FRONT_COLOR and
-# BODY_COLOR instead of every Face sharing DRAWER_FRONT_COLOR uniformly:
-# the topmost drawer gets DRAWER_FRONT_COLOR (the usual accent, "reverse
-# of body"), the one right below it gets BODY_COLOR instead, then keeps
-# alternating down the stack. See dresser.py's _add_drawer.
-ALTERNATE_DRAWER_COLORS = _style["alternate_drawer_colors"]
+
+# The body color, named directly (e.g. "brown" or "misty") instead of a
+# reverse-from-default boolean — per the user's own suggestion. Whichever
+# of colors.COLOR_PAIR isn't MAIN_COLOR becomes ALTERNATE_COLOR (the
+# drawer accent) automatically.
+MAIN_COLOR = _style["main_color"]
+if MAIN_COLOR not in colors.COLOR_PAIR:
+    raise ValueError(f"Unknown MAIN_COLOR={MAIN_COLOR!r}; must be one of {colors.COLOR_PAIR}")
+ALTERNATE_COLOR = next(c for c in colors.COLOR_PAIR if c != MAIN_COLOR)
+
+# Per-drawer Face color, top to bottom, one digit per drawer: '1' = same
+# as BODY_COLOR (MAIN_COLOR), '0' = the opposite (DRAWER_FRONT_COLOR /
+# ALTERNATE_COLOR) — e.g. "1000" means the topmost drawer matches the
+# body, the other 3 don't. Per the user's own suggested config format.
+# Length must match DRAWER_COUNT (checked below, once DRAWER_COUNT is
+# known). See dresser.py's _add_drawer.
+DRAWER_COLOR_PATTERN = _style["drawer_color_pattern"]
 
 # --- Overall footprint ---------------------------------------------------
 # X = WIDTH (left-right), Y = DEPTH (front-back). Every drawer opens from
@@ -77,6 +109,13 @@ DRAWER_BOTTOM_THICKNESS = 3
 
 # --- Drawers ---------------------------------------------------------
 DRAWER_COUNT = 4  # TBD: matches references/reference-page8.png's 4-drawer layout
+
+if len(DRAWER_COLOR_PATTERN) != DRAWER_COUNT or any(c not in "01" for c in DRAWER_COLOR_PATTERN):
+    raise ValueError(
+        f"DRAWER_COLOR_PATTERN={DRAWER_COLOR_PATTERN!r} must be a string of "
+        f"{DRAWER_COUNT} '0'/'1' characters (one per drawer, top to bottom) "
+        f"— got length {len(DRAWER_COLOR_PATTERN)}"
+    )
 
 # Exterior face height, per drawer (نمای بیرونی هر کشو). Drawers stack
 # with no gap between their bands — DRAWER_FACE_GAP_Z below is a reveal
@@ -96,6 +135,25 @@ DRAWER_FACE_GAP_Z = 3  # TBD: placeholder reveal, no real number chosen yet
 # thickness — that thickness IS the overlay amount. Same convention as
 # furniture/bed's DRAWER_FRONT_OVERLAY_AMOUNT.
 DRAWER_FRONT_OVERLAY_AMOUNT = MDF_THICKNESS
+
+# Inset, not Full Overlay (see module docstring): the structural front —
+# and with it the whole carcass behind it (bottom, sides, back) — sits
+# back from the shell's own open-face plane (Y=0) by exactly the Face's
+# own thickness, so the Face's protrusion (above) lands flush with the
+# shell instead of past it, and doesn't cover the 2 side panels' own
+# front edge. Same idea as furniture/bed's DRAWER_FRONT_SETBACK for its
+# "inset" DRAWER_STYLE.
+DRAWER_FRONT_SETBACK = DRAWER_FRONT_OVERLAY_AMOUNT
+
+# Reveal gap between the Face and the 2 side panels it sits between (X),
+# so it doesn't rub — the Inset counterpart of DRAWER_FACE_GAP_Z above.
+DRAWER_FACE_SIDE_GAP = 3  # TBD: placeholder reveal, no real number chosen yet
+
+# Derived: the Face's own width — fits entirely BETWEEN the 2 side
+# panels (WIDTH minus both MDF_THICKNESS side panels, minus the reveal),
+# never spanning past them. The whole point of Inset over Full Overlay:
+# this is what keeps the side panels' own front edge visible.
+DRAWER_FACE_WIDTH = WIDTH - 2 * MDF_THICKNESS - DRAWER_FACE_SIDE_GAP
 
 # Per-side horizontal clearance (X) between the drawer carcass and the
 # dresser's own opening, for slide hardware. Same ballpark as
@@ -123,8 +181,11 @@ DRAWER_CARCASS_HEIGHT = (
 
 # Derived: drawer depth, filling most of DEPTH — front-to-back, from just
 # behind the structural front to RAIL_BACK_CLEARANCE short of the Back
-# panel.
-DRAWER_DEPTH = DEPTH - 2 * MDF_THICKNESS - RAIL_BACK_CLEARANCE
+# panel. Shrinks by DRAWER_FRONT_SETBACK compared to a flush (non-inset)
+# front, since the whole carcass recedes into the dresser by that much
+# (RAIL_BACK_CLEARANCE itself stays measured against the Back panel,
+# which doesn't move).
+DRAWER_DEPTH = DEPTH - 2 * MDF_THICKNESS - RAIL_BACK_CLEARANCE - DRAWER_FRONT_SETBACK
 
 # Derived: drawer width, inset from WIDTH by MDF_THICKNESS on each side
 # (the carcass's own Left/Right walls) plus RAIL_CLEARANCE on each side
@@ -143,14 +204,54 @@ TOE_KICK_HEIGHT = 60  # TBD
 TOE_KICK_SETBACK = 20  # TBD: how far back from the front face the toe-kick board sits
 TOE_KICK_THICKNESS = 16  # TBD
 
+# --- Top panel / side lip -------------------------------------------------
+# The Top panel sits INSET between the 2 side panels (see module
+# docstring) instead of resting on top of them.
+TOP_PANEL_WIDTH = WIDTH - 2 * MDF_THICKNESS
+TOP_PANEL_X_MIN = MDF_THICKNESS
+
+# The Top panel's own front edge also retreats a little (Y), just enough
+# to clear the topmost drawer's Face — which rises all the way up to be
+# flush with the Left/Right/Back panels' own top edge instead of stopping
+# at the Top panel's underside (per the user's brief) — while the rest of
+# that drawer's carcass stays the normal DRAWER_CARCASS_HEIGHT, tucked
+# below the Top panel same as every other drawer. DRAWER_FRONT_SETBACK is
+# exactly the Face's own thickness, i.e. where the Face ends and the
+# (normal-height) structural front begins — the Top panel is free to
+# start right there with no collision.
+TOP_PANEL_Y_MIN = DRAWER_FRONT_SETBACK
+TOP_PANEL_DEPTH = DEPTH - TOP_PANEL_Y_MIN
+
+# How far the 2 side panels rise above the Top panel's own finished (top)
+# surface — the whole lip is just the side panels themselves running
+# taller, no separate frame or tray piece (see module docstring). Front
+# and back stay open; only the left/right ends get this lip.
+SIDE_TOP_LIP = 10  # confirmed: per the user's brief
+
 # --- Derived: overall interior / exterior height -------------------------
-# Height the Left/Right/Back panels actually span (trapped between the
-# Bottom and Top panels) — DRAWER_COUNT bands stacked with no gap between
-# them.
+# Height the space available for drawers actually spans (from the top of
+# the Bottom panel to the underside of the Top panel) — DRAWER_COUNT
+# bands stacked with no gap between them.
 INTERIOR_HEIGHT = DRAWER_COUNT * DRAWER_FACE_HEIGHT
 
-# Exterior height, floor to the Top panel's own top edge.
-HEIGHT = TOE_KICK_HEIGHT + 2 * MDF_THICKNESS + INTERIOR_HEIGHT
+# Derived: how tall the 2 side panels (and the Back panel, which spans
+# the same Z range) actually are — trapped between the Bottom panel and
+# SIDE_TOP_LIP above the Top panel's own finished surface. Taller than
+# INTERIOR_HEIGHT by MDF_THICKNESS (the Top panel's own thickness, now
+# nested within the sides' height instead of capping them from above) +
+# SIDE_TOP_LIP.
+SIDE_HEIGHT = INTERIOR_HEIGHT + MDF_THICKNESS + SIDE_TOP_LIP
+
+# Exterior height, floor to the 2 side panels' own top edge (the tallest
+# feature — see SIDE_TOP_LIP above).
+HEIGHT = TOE_KICK_HEIGHT + MDF_THICKNESS + SIDE_HEIGHT
+
+# How much taller the topmost drawer's own Face is than every other
+# drawer's — enough to reach from its normal top edge all the way up to
+# the Left/Right/Back panels' own top edge (SIDE_HEIGHT), past where the
+# Top panel's own thickness and SIDE_TOP_LIP used to cap it. See
+# dresser.py's _add_drawer and TOP_PANEL_Y_MIN above.
+TOP_DRAWER_FACE_EXTRA_HEIGHT = MDF_THICKNESS + SIDE_TOP_LIP
 
 # --- Material / appearance -----------------------------------------------
 # Same visible/stock_source convention as furniture/bed (see
@@ -160,9 +261,5 @@ HEIGHT = TOE_KICK_HEIGHT + 2 * MDF_THICKNESS + INTERIOR_HEIGHT
 # is reclaimed MDF with a separate (fiber) bottom board; every visible
 # Face is always new stock regardless of what's reclaimed elsewhere.
 RECLAIMED_MDF_COLOR = colors.swatch_rgb("white")
-if REVERSE_COLORS:
-    BODY_COLOR = colors.DRAWER_FRONT_COLOR
-    DRAWER_FRONT_COLOR = colors.BODY_COLOR
-else:
-    BODY_COLOR = colors.BODY_COLOR
-    DRAWER_FRONT_COLOR = colors.DRAWER_FRONT_COLOR
+BODY_COLOR = colors.swatch_rgb(MAIN_COLOR)
+DRAWER_FRONT_COLOR = colors.swatch_rgb(ALTERNATE_COLOR)

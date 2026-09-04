@@ -41,14 +41,16 @@ def main():
     print(f"Created {OUTPUT_FILE}")
     print(f"Total panels: {len(panels)} (expected 6 shell + {params.DRAWER_COUNT} x 6 drawer)")
 
-    # X: 0..WIDTH. Y: the Face panels' own protrusion is the furthest-
-    # forward point (negative), DEPTH the furthest back. Z: floor (0) ..
-    # top of the Top panel (HEIGHT).
+    # X: 0..WIDTH. Y: Inset Face panels land flush at Y=0 (the shell's own
+    # open-face plane), not past it — see params.py's DRAWER_FRONT_SETBACK
+    # — so 0 is the furthest-forward point; DEPTH the furthest back. Z:
+    # floor (0) .. top of the Left/Right side panels (HEIGHT), the
+    # tallest feature (SIDE_TOP_LIP above the Top panel's own surface).
     verify_footprint(
         "dresser_test", panels,
         expected=dict(
             xmin=0, xmax=params.WIDTH,
-            ymin=-params.DRAWER_FRONT_OVERLAY_AMOUNT, ymax=params.DEPTH,
+            ymin=0, ymax=params.DEPTH,
             zmin=0, zmax=params.HEIGHT,
         ),
     )
