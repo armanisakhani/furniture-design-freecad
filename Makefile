@@ -59,3 +59,22 @@ ifdef REBUILD
 else
 	tools/export_dresser_gltf.sh
 endif
+
+.PHONY: test-wardrobe view-wardrobe export-wardrobe
+
+test-wardrobe:
+	$(FREECADCMD) furniture/wardrobe/tests/wardrobe_test.py
+
+view-wardrobe:
+ifdef REBUILD
+	tools/view_wardrobe.sh --rebuild
+else
+	tools/view_wardrobe.sh
+endif
+
+export-wardrobe:
+ifdef REBUILD
+	tools/export_wardrobe_gltf.sh --rebuild
+else
+	tools/export_wardrobe_gltf.sh
+endif

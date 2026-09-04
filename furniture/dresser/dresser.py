@@ -107,7 +107,7 @@ def create_dresser(doc):
     add_panel(
         "Top", "Top Panel", params.TOP_PANEL_WIDTH, params.TOP_PANEL_DEPTH, t,
         IDENTITY,
-        App.Vector(params.TOP_PANEL_X_MIN, params.TOP_PANEL_Y_MIN, bottom_z + t + interior_height),
+        App.Vector(params.TOP_PANEL_X_MIN, params.TOP_PANEL_Y_MIN, bottom_z + params.TOP_PANEL_Z_MIN),
         visible=True, stock_source="new",
     )
     # Left/Right: visible (free-standing piece, unlike furniture/bed's
