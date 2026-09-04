@@ -8,6 +8,7 @@ Parametric FreeCAD furniture designs, built for real MDF fabrication.
 - `furniture/<name>/` — one design per subfolder (currently just `bed/`). Each has its own `params.py` (single source of truth for dimensions), its own assembly modules, a `tests/` folder (headless `freecadcmd` scripts, run after any change), and a `references/` folder (photos, cut-list spreadsheets, color swatches).
 - `docs/` — `CONTEXT.md` (shared + per-design domain glossary), `roadmap.md` (the bed design's own phase-by-phase execution log), `plan.md` (original vision doc, historical).
 - `tools/` — GUI helper scripts (`view_bed.sh` and friends) for opening a model with colors/camera already applied, no manual FreeCAD console typing needed.
+- `orders/` — combines 1+ furniture items from `furniture/<name>/` into one order: builds each item (optionally with its own `STYLE`/`LAYOUT`/etc. override), lays them out side by side in one `.FCStd`, and reports one combined cut list across all of them. See `orders/registry.py` for the `ORDER` spec and `make order`.
 
 ## Adding a new furniture design
 

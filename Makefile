@@ -78,3 +78,11 @@ ifdef REBUILD
 else
 	tools/export_wardrobe_gltf.sh
 endif
+
+# Combines 1+ furniture items into one order (see orders/registry.py's
+# ORDER spec, e.g. `ORDER="dresser:2:STYLE=2,wardrobe:1:LAYOUT=two_piece"
+# make order`), reports the combined cut list, and opens it in FreeCAD.
+.PHONY: order
+
+order:
+	tools/order.sh
