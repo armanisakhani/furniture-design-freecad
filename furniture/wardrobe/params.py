@@ -35,7 +35,7 @@ import colors
 # convention as the drawer pattern after it, one digit per drawer top to
 # bottom).
 STYLES = {
-    1: dict(main_color="misty", color_pattern="0_1111"),
+    1: dict(main_color="misty", color_pattern="0_1010"),
 }
 
 
