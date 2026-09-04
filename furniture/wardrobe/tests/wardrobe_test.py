@@ -38,13 +38,13 @@ def main():
     doc.recompute()
     doc.saveAs(OUTPUT_FILE)
 
-    non_drawer_panels = 9 if params.LAYOUT == "one_piece" else 13
+    non_drawer_panels = 15 if params.LAYOUT == "one_piece" else 19
     height = params.ONE_PIECE_HEIGHT if params.LAYOUT == "one_piece" else params.TWO_PIECE_HEIGHT
 
     print(f"Created {OUTPUT_FILE} (LAYOUT={params.LAYOUT!r})")
     print(
         f"Total panels: {len(panels)} "
-        f"(expected {non_drawer_panels} shell/rod/top/doors + {params.DRAWER_COUNT} x 9 drawer)"
+        f"(expected {non_drawer_panels} shell/rod/top/doors/door-handles + {params.DRAWER_COUNT} x 9 drawer)"
     )
 
     # X: 0..WIDTH. Y: each drawer's metal handle is the furthest-forward

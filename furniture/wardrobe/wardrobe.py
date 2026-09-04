@@ -209,6 +209,12 @@ def _add_doors(add_panel, opening_bottom, opening_top):
     door_z_min = opening_bottom + gap_z / 2
     door_height = (opening_top - opening_bottom) - gap_z
 
+    # Each door's handle sits near its own inner edge (by the center gap,
+    # away from the hinge on the outer edge).
+    inner_edges = {
+        "Left": params.DOOR_LEFT_X_MIN + params.DOOR_WIDTH,
+        "Right": params.DOOR_RIGHT_X_MIN,
+    }
     for side, x_min in (("Left", params.DOOR_LEFT_X_MIN), ("Right", params.DOOR_RIGHT_X_MIN)):
         add_panel(
             f"Door{side}", f"Door ({side.lower()})",
@@ -216,6 +222,39 @@ def _add_doors(add_panel, opening_bottom, opening_top):
             App.Vector(x_min, 0, door_z_min),
             color=params.DOOR_COLOR, visible=True, stock_source="new",
         )
+        _add_door_handle(add_panel, side, inner_edges[side], door_z_min, door_height)
+
+
+def _add_door_handle(add_panel, side, inner_edge_x, door_z_min, door_height):
+    """Vertical bar handle (دستگیره), centered on the door's own height,
+    near its inner edge — same "bridge pull" shape as the drawer handle
+    (2 short posts + a bar), just rotated so the bar's long axis is Z
+    instead of X (ROT_X90 puts Width along Z here, vs. IDENTITY's Width
+    along Y for the drawer handle's own horizontal bar)."""
+    bar_size = params.HANDLE_BAR_SIZE
+    standoff = params.HANDLE_STANDOFF
+    height = params.DOOR_HANDLE_HEIGHT
+    gap = params.DOOR_HANDLE_EDGE_GAP
+
+    center_x = inner_edge_x - gap if side == "Left" else inner_edge_x + gap
+    bar_x_min = center_x - bar_size / 2
+    handle_z_min = door_z_min + (door_height - height) / 2
+
+    for post_side, z in (("Bottom", handle_z_min), ("Top", handle_z_min + height - bar_size)):
+        add_panel(
+            f"Door{side}HandlePost{post_side}", f"Door ({side.lower()}) Handle Post ({post_side.lower()})",
+            bar_size, standoff, bar_size, IDENTITY,
+            App.Vector(bar_x_min, -standoff, z),
+            material="Metal", color=params.HANDLE_COLOR,
+            visible=True, stock_source="new",
+        )
+    add_panel(
+        f"Door{side}HandleBar", f"Door ({side.lower()}) Handle Bar",
+        bar_size, height, bar_size, ROT_X90,
+        App.Vector(bar_x_min, -standoff - bar_size, handle_z_min),
+        material="Metal", color=params.HANDLE_COLOR,
+        visible=True, stock_source="new",
+    )
 
 
 def _add_drawer(add_panel, index, x_min, band_z_min):

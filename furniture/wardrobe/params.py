@@ -35,7 +35,7 @@ import colors
 # convention as the drawer pattern after it, one digit per drawer top to
 # bottom).
 STYLES = {
-    1: dict(main_color="misty", color_pattern="0_1000"),
+    1: dict(main_color="misty", color_pattern="0_1111"),
 }
 
 
@@ -137,6 +137,13 @@ DOOR_THICKNESS = MDF_THICKNESS
 DOOR_WIDTH = (INTERIOR_WIDTH - DOOR_SIDE_GAP - DOOR_GAP) / 2
 DOOR_LEFT_X_MIN = MDF_THICKNESS + DOOR_SIDE_GAP / 2
 DOOR_RIGHT_X_MIN = DOOR_LEFT_X_MIN + DOOR_WIDTH + DOOR_GAP
+
+# Each door gets a vertical bar handle near its own inner edge (by the
+# center gap, away from the hinge) — same "bridge pull" hardware as the
+# drawer handles (HANDLE_BAR_SIZE/HANDLE_STANDOFF/HANDLE_COLOR), just
+# oriented vertically.
+DOOR_HANDLE_HEIGHT = 160  # TBD: vertical handle length
+DOOR_HANDLE_EDGE_GAP = 40  # TBD: door's inner edge to the handle's own center line
 
 SIDE_TOP_LIP = 10  # lip the side panels form above an inset Top panel
 
