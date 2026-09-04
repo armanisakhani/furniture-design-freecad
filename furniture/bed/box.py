@@ -9,18 +9,25 @@ for the history of corrections behind each rule below.
 Global axes (plan.md): X = WIDTH, Y = LENGTH (head-to-toe), Z = height.
 
 Construction rules:
-  * Box shell (bottom, 2 side walls, and the top panel in the "overlay_
-    under_box"/"inset" DRAWER_STYLEs) is inset by MDF_THICKNESS from
-    FRAME_WIDTH on each side (BOX_WIDTH, starting at BOX_SHELL_X_MIN) —
-    not flush at 0..FRAME_WIDTH, so the Face's overlay lands exactly back
-    on FRAME_WIDTH. Bottom/Top cap the 2 side walls at BOX_INTERIOR_HEIGHT
-    (confirmed against the reference spreadsheet's "کناره" row — not
-    BOX_HEIGHT). Side walls double as rail-mounting walls. Shell's X
-    extremes are open — where the 2 drawers slide out. Top panel's own
-    footprint additionally depends on DRAWER_STYLE (params.py): full
-    FRAME_WIDTH in "overlay_over_box" (caps the drawer from above), inset
-    BOX_WIDTH in "overlay_under_box"/"inset" (an unmodeled rail frame
-    reaches out instead, or nothing does).
+  * Drawer carcasses (and the drawer bay they sit in) are always inset by
+    MDF_THICKNESS from FRAME_WIDTH on each side (BOX_WIDTH, starting at
+    BOX_SHELL_X_MIN) regardless of DRAWER_STYLE — not flush at
+    0..FRAME_WIDTH, so the Face's overlay lands exactly back on
+    FRAME_WIDTH in the 2 "overlay_*" styles. Bottom and the 2 side walls
+    instead match the Top panel's own footprint (BOX_SHELL_PANEL_WIDTH/
+    X_MIN, params.py) *except* in "overlay_over_box", where they stay
+    inset (BOX_WIDTH) even though the Top reaches further — since there,
+    unlike "inset", the Top's extra reach is to cap the Face's own
+    overlay, not to support the mattress, so it's fine for the Top alone
+    to cantilever past its own support (CONTEXT.md's "Box shell inset").
+    Bottom/Top cap the 2 side walls at BOX_INTERIOR_HEIGHT (confirmed
+    against the reference spreadsheet's "کناره" row — not BOX_HEIGHT).
+    Side walls double as rail-mounting walls. Shell's X extremes are open
+    — where the 2 drawers slide out. Top panel's own footprint depends on
+    DRAWER_STYLE (params.py): full FRAME_WIDTH in "overlay_over_box"
+    (caps the drawer from above) and "inset" (bears the mattress, nothing
+    else bridges the gap there); inset BOX_WIDTH in "overlay_under_box"
+    (an unmodeled rail frame reaches out instead).
   * Drawer depth is RAIL_LENGTH, not derived from FRAME_WIDTH (matches
     drawer-slide sizing convention: depth ≈ slide's nominal length). Since
     RAIL_LENGTH (650) is well under half of FRAME_WIDTH (1800), the 2
@@ -124,9 +131,11 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
     # StockSource-based color. Overrides color only, not StockSource/visible
     # (see params.py's own comment on this).
     edge_color = params.BODY_COLOR if params.DRAWER_OPENING_EDGE_MATCHES_BODY else None
+    shell_panel_width = params.BOX_SHELL_PANEL_WIDTH
+    shell_panel_x_min = params.BOX_SHELL_PANEL_X_MIN
     add_panel(
-        "Bottom", "Bottom Panel", params.BOX_WIDTH, box_length, t,
-        _IDENTITY, App.Vector(params.BOX_SHELL_X_MIN, y_offset, 0),
+        "Bottom", "Bottom Panel", shell_panel_width, box_length, t,
+        _IDENTITY, App.Vector(shell_panel_x_min, y_offset, 0),
         color=edge_color, visible=False, stock_source="reclaimed",
     )
     add_panel(
@@ -136,16 +145,18 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
     )
 
     # 2 long side walls: thin along Y, trapped between top/bottom (Z), at
-    # the box's two Y extremes. Same X inset as Bottom; height =
-    # interior_height, not box_height (see module docstring).
+    # the box's two Y extremes. Same X footprint as Bottom (BOX_SHELL_
+    # PANEL_WIDTH/X_MIN — matches Top except in "overlay_over_box", see
+    # params.py); height = interior_height, not box_height (see module
+    # docstring).
     add_panel(
-        "SideWallNear", "Side Wall (Y near)", params.BOX_WIDTH, interior_height, t,
-        _ROT_X90, App.Vector(params.BOX_SHELL_X_MIN, y_offset, t),
+        "SideWallNear", "Side Wall (Y near)", shell_panel_width, interior_height, t,
+        _ROT_X90, App.Vector(shell_panel_x_min, y_offset, t),
         color=edge_color, visible=False, stock_source="reclaimed",
     )
     add_panel(
-        "SideWallFar", "Side Wall (Y far)", params.BOX_WIDTH, interior_height, t,
-        _ROT_X90, App.Vector(params.BOX_SHELL_X_MIN, y_offset + box_length - t, t),
+        "SideWallFar", "Side Wall (Y far)", shell_panel_width, interior_height, t,
+        _ROT_X90, App.Vector(shell_panel_x_min, y_offset + box_length - t, t),
         color=edge_color, visible=False, stock_source="reclaimed",
     )
 

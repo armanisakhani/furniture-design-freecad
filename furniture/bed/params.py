@@ -244,6 +244,22 @@ _drawer_geometry = _drawer_style_geometry(DRAWER_STYLE)
 # already bridges it (spanning nearly the box's whole length).
 BOX_TOP_PANEL_WIDTH = _drawer_geometry["top_panel_width"]
 BOX_TOP_X_MIN = _drawer_geometry["top_x_min"]
+# Bottom + the 2 side walls' own X footprint/start: matches the Top panel
+# exactly (so Top always rests on real material, not an unsupported
+# overhang) in every style EXCEPT "overlay_over_box" — there, the Top's
+# extra reach past BOX_WIDTH is specifically to cap the drawer Face's own
+# overlay (see module docstring/CONTEXT.md's "a deliberate deviation from
+# the reference, at the user's explicit request"), a mismatch that's fine
+# to leave standing since it's driven by that overlay, not by mattress
+# support. In "inset" there's no such overlay to justify the gap — caught
+# via STYLE=5, where Bottom/the 2 side walls stopped 16mm short of the Top
+# panel on each X edge for no structural reason.
+BOX_SHELL_PANEL_WIDTH = (
+    BOX_WIDTH if DRAWER_STYLE == "overlay_over_box" else BOX_TOP_PANEL_WIDTH
+)
+BOX_SHELL_PANEL_X_MIN = (
+    BOX_SHELL_X_MIN if DRAWER_STYLE == "overlay_over_box" else BOX_TOP_X_MIN
+)
 # Height the drawer carcass gives up for the unmodeled rail-mount frame in
 # "overlay_under_box"/"inset" (0 in "overlay_over_box"). Used by box.py.
 DRAWER_HEIGHT_REDUCTION = _drawer_geometry["drawer_height_reduction"]
