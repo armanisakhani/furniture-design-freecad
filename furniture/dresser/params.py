@@ -103,7 +103,7 @@ DRAWER_COLOR_PATTERN = _style["drawer_color_pattern"]
 # X = WIDTH (left-right), Y = DEPTH (front-back). Every drawer opens from
 # the Y=0 face. Z = height, floor at Z=0.
 WIDTH = 900  # confirmed
-DEPTH = 450  # confirmed
+DEPTH = 550  # confirmed: matches furniture/wardrobe's own DEPTH
 
 # --- Material --------------------------------------------------------
 MDF_THICKNESS = 16  # confirmed: same board as furniture/bed
@@ -231,15 +231,16 @@ DRAWER_WIDTH = WIDTH - 2 * MDF_THICKNESS - 2 * RAIL_CLEARANCE
 # Left/Right panels resting on top of its 2 edges — never inset.
 #
 # The Top panel has 2 modes (TOP_PANEL_MODE):
-#   "inset" (default): sits BETWEEN the 2 side panels, which then run
-#     SIDE_TOP_LIP taller than it, forming a small lip on each end (no
-#     separate frame/tray piece). Needed for the 2-tone body/drawer-front
-#     look — the side panels stay visible as a continuous vertical strip.
+#   "inset" (default): sits BETWEEN the 2 side panels, which end flush
+#     with its own top surface — no lip, every drawer (including the top
+#     one) is the same DRAWER_FACE_HEIGHT band. Needed for the 2-tone
+#     body/drawer-front look — the side panels stay visible as a
+#     continuous vertical strip.
 #   "on_top": a full WIDTH x DEPTH panel resting ON TOP of the side
 #     panels, mirroring the Bottom panel's own relationship to them (just
-#     flipped). No lip. Used for a standalone dresser-like unit that
-#     needs a flat, unbroken top surface — e.g. a piece something else
-#     rests on (see furniture/wardrobe's two-piece layout).
+#     flipped). Used for a standalone dresser-like unit that needs a
+#     flat, unbroken top surface — e.g. a piece something else rests on
+#     (see furniture/wardrobe's two-piece layout).
 TOP_PANEL_MODE = os.environ.get("TOP_PANEL_MODE", "inset")
 if TOP_PANEL_MODE not in ("inset", "on_top"):
     raise ValueError(f"Unknown TOP_PANEL_MODE={TOP_PANEL_MODE!r}; must be 'inset' or 'on_top'")
@@ -251,19 +252,12 @@ INTERIOR_HEIGHT = DRAWER_COUNT * DRAWER_FACE_HEIGHT
 if TOP_PANEL_MODE == "inset":
     TOP_PANEL_WIDTH = WIDTH - 2 * MDF_THICKNESS
     TOP_PANEL_X_MIN = MDF_THICKNESS
-    # Retreats (Y) just enough to clear the topmost drawer's taller Face
-    # (see TOP_DRAWER_FACE_EXTRA_HEIGHT) — DRAWER_FRONT_SETBACK is exactly
-    # where that Face ends and the structural front begins.
     TOP_PANEL_Y_MIN = DRAWER_FRONT_SETBACK
     TOP_PANEL_DEPTH = DEPTH - TOP_PANEL_Y_MIN
-    SIDE_TOP_LIP = 10
-    SIDE_HEIGHT = INTERIOR_HEIGHT + MDF_THICKNESS + SIDE_TOP_LIP
+    SIDE_HEIGHT = INTERIOR_HEIGHT + MDF_THICKNESS
     HEIGHT = MDF_THICKNESS + SIDE_HEIGHT
     TOP_PANEL_Z_MIN = MDF_THICKNESS + INTERIOR_HEIGHT
-    # How much taller the topmost drawer's Face is, to reach flush with
-    # the side panels' own top edge instead of stopping under the Top
-    # panel (see dresser.py's _add_drawer).
-    TOP_DRAWER_FACE_EXTRA_HEIGHT = MDF_THICKNESS + SIDE_TOP_LIP
+    TOP_DRAWER_FACE_EXTRA_HEIGHT = 0
 else:  # "on_top"
     TOP_PANEL_WIDTH = WIDTH
     TOP_PANEL_X_MIN = 0

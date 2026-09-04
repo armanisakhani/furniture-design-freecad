@@ -88,8 +88,8 @@ def _create_one_piece(doc):
     _add_rod(add_panel, depth, ceiling_z)
 
     add_panel(
-        "Top", "Top Panel", params.INTERIOR_WIDTH, depth, t,
-        IDENTITY, App.Vector(t, 0, ceiling_z),
+        "Top", "Top Panel", width, depth, t,
+        IDENTITY, App.Vector(0, 0, ceiling_z),
         visible=True, stock_source="new",
     )
 
@@ -174,8 +174,8 @@ def _create_two_piece(doc):
     _add_rod(add_panel, depth, ceiling_z)
 
     add_panel(
-        "HangingTop", "Hanging Unit - Top Panel", params.INTERIOR_WIDTH, depth, t,
-        IDENTITY, App.Vector(t, 0, ceiling_z),
+        "HangingTop", "Hanging Unit - Top Panel", width, depth, t,
+        IDENTITY, App.Vector(0, 0, ceiling_z),
         visible=True, stock_source="new",
     )
 

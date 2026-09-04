@@ -10,14 +10,19 @@ Face, metal bar handle, DRAWER_COUNT=4). The hanging compartment (rod + 2
 doors) is new. Doors and the drawer Face are always Inset (fit BETWEEN the
 Left/Right side panels, which stay visible), never Full Overlay.
 
-LAYOUT picks one of 2 physical arrangements:
+LAYOUT (set per-STYLE below, or directly via its own env var) picks one of
+2 physical arrangements:
   "one_piece" (default): one continuous carcass — the same Left/Right/Back
     panels span both the drawer section and the hanging compartment.
   "two_piece": 2 separate freestanding units stacked — a dresser-like unit
-    (own Bottom/Left/Right/Back/Top, TOP_PANEL_MODE="on_top" for a flat
-    surface) with the hanging unit (own Bottom/Left/Right/Back/Top,
-    mirroring furniture/dresser's own inset-Top-with-lip shape) simply
+    and the hanging unit (each own Bottom/Left/Right/Back/Top) simply
     resting on top of it, not fastened together.
+
+Every Top panel (the outermost ceiling, both layouts) is Full Overlay —
+a full WIDTH x DEPTH slab resting ON TOP of the Left/Right/Back panels,
+never inset between them like furniture/dresser's own Top. The internal
+Divider (one_piece) and the bottom unit's own Top (two_piece) stay as
+they were.
 
 All dimensions below are "# TBD" placeholders — first draft, for visual
 review.
@@ -33,9 +38,10 @@ import colors
 # color_pattern is "<door digit>_<drawer pattern>", e.g. "1_1000": the
 # digit before "_" picks the doors' color (same '1'=body/'0'=accent
 # convention as the drawer pattern after it, one digit per drawer top to
-# bottom).
+# bottom). layout is one of LAYOUT's own 2 values (see below).
 STYLES = {
-    1: dict(main_color="misty", color_pattern="0_1111"),
+    1: dict(main_color="misty", color_pattern="0_1111", layout="two_piece"),
+    2: dict(main_color="misty", color_pattern="0_1111", layout="one_piece"),
 }
 
 
@@ -48,6 +54,8 @@ def _resolve_style():
         values["main_color"] = os.environ["MAIN_COLOR"]
     if os.environ.get("COLOR_PATTERN"):
         values["color_pattern"] = os.environ["COLOR_PATTERN"]
+    if os.environ.get("LAYOUT"):
+        values["layout"] = os.environ["LAYOUT"]
     return values
 
 
@@ -64,13 +72,13 @@ if _door_digit not in "01":
 DOOR_COLOR_DIGIT = _door_digit
 
 # --- Layout -------------------------------------------------------------
-LAYOUT = os.environ.get("LAYOUT", "one_piece")
+LAYOUT = _style["layout"]
 if LAYOUT not in ("one_piece", "two_piece"):
     raise ValueError(f"Unknown LAYOUT={LAYOUT!r}; must be 'one_piece' or 'two_piece'")
 
 # --- Overall footprint ---------------------------------------------------
 WIDTH = 800  # TBD
-DEPTH = 580  # TBD: deeper than furniture/dresser's 450mm, to clear a hanger front-to-back
+DEPTH = 550  # confirmed: matches furniture/dresser's own DEPTH
 MDF_THICKNESS = 16  # confirmed: same board as furniture/bed and furniture/dresser
 DRAWER_BOTTOM_THICKNESS = 3
 
@@ -114,7 +122,9 @@ DRAWER_WIDTH = WIDTH - 2 * MDF_THICKNESS - 2 * RAIL_CLEARANCE
 DRAWER_SECTION_HEIGHT = DRAWER_COUNT * DRAWER_FACE_HEIGHT
 
 # --- Hanging compartment --------------------------------------------------
-HANGING_INTERIOR_HEIGHT = 1200  # TBD: rough full-length-garment clearance
+# Sized (with DRAWER_SECTION_HEIGHT below) so the assembled wardrobe's
+# total height lands around 1800mm.
+HANGING_INTERIOR_HEIGHT = 936  # TBD
 
 # Hanging rod (میله آویز): a square metal bar standing in for a round rod
 # (box-only Panel primitive, like the drawer handle's own bar). No
@@ -145,32 +155,30 @@ DOOR_RIGHT_X_MIN = DOOR_LEFT_X_MIN + DOOR_WIDTH + DOOR_GAP
 DOOR_HANDLE_HEIGHT = 160  # TBD: vertical handle length
 DOOR_HANDLE_EDGE_GAP = 40  # TBD: door's inner edge to the handle's own center line
 
-SIDE_TOP_LIP = 10  # lip the side panels form above an inset Top panel
-
 # --- Derived: one_piece heights ------------------------------------------
 # One continuous carcass: Bottom -> DRAWER_COUNT drawers -> Divider (inset,
 # closes the drawer section / floors the hanging compartment) -> hanging
-# compartment -> Top (inset, no lip — not needed without a drawer Face to
-# clear).
-ONE_PIECE_SIDE_HEIGHT = DRAWER_SECTION_HEIGHT + MDF_THICKNESS + HANGING_INTERIOR_HEIGHT + MDF_THICKNESS
-ONE_PIECE_HEIGHT = MDF_THICKNESS + ONE_PIECE_SIDE_HEIGHT
+# compartment -> Top (on top, full width — see module docstring). The
+# sides stop where the hanging compartment does; the Top panel then adds
+# its own thickness on top of that.
+ONE_PIECE_SIDE_HEIGHT = DRAWER_SECTION_HEIGHT + MDF_THICKNESS + HANGING_INTERIOR_HEIGHT
+ONE_PIECE_HEIGHT = MDF_THICKNESS + ONE_PIECE_SIDE_HEIGHT + MDF_THICKNESS
 ONE_PIECE_DIVIDER_Z_MIN = MDF_THICKNESS + DRAWER_SECTION_HEIGHT
-ONE_PIECE_TOP_PANEL_Z_MIN = ONE_PIECE_DIVIDER_Z_MIN + MDF_THICKNESS + HANGING_INTERIOR_HEIGHT
+ONE_PIECE_TOP_PANEL_Z_MIN = MDF_THICKNESS + ONE_PIECE_SIDE_HEIGHT
 
 # --- Derived: two_piece heights -------------------------------------------
-# Bottom unit: furniture/dresser's own shape with TOP_PANEL_MODE="on_top"
-# (flat top, no lip) — a real surface for the hanging unit to rest on.
+# Bottom unit: furniture/dresser's own shape with TOP_PANEL_MODE="on_top".
 BOTTOM_UNIT_SIDE_HEIGHT = DRAWER_SECTION_HEIGHT
 BOTTOM_UNIT_HEIGHT = MDF_THICKNESS + BOTTOM_UNIT_SIDE_HEIGHT + MDF_THICKNESS
 BOTTOM_UNIT_TOP_PANEL_Z_MIN = MDF_THICKNESS + BOTTOM_UNIT_SIDE_HEIGHT
 
-# Hanging unit: a standalone box mirroring furniture/dresser's own
-# Bottom(full)/Top(inset-with-lip) shape, just with a rod instead of
-# drawers. Z values below are relative to this unit's own floor (Z=0);
-# wardrobe.py offsets them by BOTTOM_UNIT_HEIGHT when placing it.
-HANGING_UNIT_SIDE_HEIGHT = HANGING_INTERIOR_HEIGHT + MDF_THICKNESS + SIDE_TOP_LIP
-HANGING_UNIT_HEIGHT = MDF_THICKNESS + HANGING_UNIT_SIDE_HEIGHT
-HANGING_UNIT_TOP_PANEL_Z_MIN = MDF_THICKNESS + HANGING_INTERIOR_HEIGHT
+# Hanging unit: a standalone box, Bottom (full) below + Top (on top, full
+# width) above, just with a rod instead of drawers. Z values below are
+# relative to this unit's own floor (Z=0); wardrobe.py offsets them by
+# BOTTOM_UNIT_HEIGHT when placing it.
+HANGING_UNIT_SIDE_HEIGHT = HANGING_INTERIOR_HEIGHT
+HANGING_UNIT_HEIGHT = MDF_THICKNESS + HANGING_UNIT_SIDE_HEIGHT + MDF_THICKNESS
+HANGING_UNIT_TOP_PANEL_Z_MIN = MDF_THICKNESS + HANGING_UNIT_SIDE_HEIGHT
 
 # Combined height of the 2 stacked units.
 TWO_PIECE_HEIGHT = BOTTOM_UNIT_HEIGHT + HANGING_UNIT_HEIGHT
