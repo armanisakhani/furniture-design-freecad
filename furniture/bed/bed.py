@@ -91,8 +91,11 @@ def create_end_face(doc):
     separate EndSkirt panel used to do (now redundant):
       * X: FRAME_WIDTH always (not BOX_TOP_PANEL_WIDTH, which could
         overshoot).
-      * Z: with HAS_LEG_FRAME, from -SKIRT_HEIGHT (matches each Drawer_box
-        Face) up to the top of the MattressStop cap (box_height + t); with
+      * Z: top edge is always box_height, flush with the box's own top
+        surface — MattressStopFoot then simply rests on top of that edge
+        (its own width already overlaps this panel's Y-span), rather than
+        this panel needing to reach higher to enclose it. Bottom edge is
+        -SKIRT_HEIGHT with HAS_LEG_FRAME (matches each Drawer_box Face); with
         no leg frame, the box's own bottom (Z=0) already IS the floor, so
         there's no skirt reach at all — it stops exactly there instead of
         dangling below the floor.
@@ -102,7 +105,7 @@ def create_end_face(doc):
     """
     t = params.MDF_THICKNESS
     z_min = -params.SKIRT_HEIGHT if params.HAS_LEG_FRAME else 0
-    z_max = params.BOX_HEIGHT + t
+    z_max = params.BOX_HEIGHT
     return create_assembly_panel(
         doc, "EndFaceFoot", "End Face (Foot)",
         length=params.FRAME_WIDTH,

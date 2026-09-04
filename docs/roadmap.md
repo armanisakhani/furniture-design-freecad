@@ -739,6 +739,24 @@ updating every module that imports it.
     note) — `HAS_LEG_FRAME`/`FLOOR_Z` only affect where `EndFaceFoot`/
     `Headboard` land, since that's the only leg-frame-dependent geometry
     that exists so far.
+* **Correction** (`STYLE=5` review): `EndFaceFoot`'s top edge was reaching
+  `BOX_HEIGHT + MDF_THICKNESS` (298mm) instead of `BOX_HEIGHT` itself
+  (282mm) — under `HAS_LEG_FRAME=False` this showed as its total Z-span
+  (`Width` property) reading 29.8cm instead of the expected 28.2cm
+  (`BOX_INTERIOR_HEIGHT` + 2×`MDF_THICKNESS`, i.e. `BOX_HEIGHT`). The extra
+  `MDF_THICKNESS` was meant to let `EndFaceFoot` rise past the box's own
+  top surface to enclose `MattressStopFoot`'s outer edge — but
+  `MattressStopFoot` (`MATTRESS_TO_FRAME_GAP_LENGTH` = 100mm wide) already
+  overlaps `EndFaceFoot`'s own Y-span (`MDF_THICKNESS` = 16mm) enough that
+  it simply rests on top of `EndFaceFoot`'s upper edge once that edge sits
+  flush with the box's own top surface — no extra reach needed to enclose
+  it. Fixed in `create_end_face` (`bed.py`): `z_max = params.BOX_HEIGHT`
+  (was `params.BOX_HEIGHT + t`), applied unconditionally (not just for
+  `HAS_LEG_FRAME=False` — the same relationship holds with a leg frame
+  too, just shifting `EndFaceFoot`'s total span down by one
+  `MDF_THICKNESS`, e.g. `STYLE=1`'s `Z=[-20.0, 298.0]` becomes
+  `Z=[-20.0, 282.0]`). Verified via direct bounding-box checks across all
+  5 styles and `make test-bed` for each (all `[PASS]`).
 
 ## Phase 8 — Doors, touch-latch mechanism, wider bedroom furniture
 
