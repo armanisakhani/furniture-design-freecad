@@ -60,9 +60,9 @@ DRAWER_FRONT_COLOR = swatch_rgb(_palette["drawer_front"])
 # An alternative to the body/drawer_front split above: instead of each box
 # having a 2-tone body/front, every box is a single solid color, and that
 # color depends on the box's position — the middle box one color, the 2
-# side boxes another (e.g. a navy middle box between 2 solid-brown side
+# side boxes another (e.g. a misty middle box between 2 solid-brown side
 # boxes). Turned on via BOX_COLOR_BY_POSITION (params.py, set per STYLE).
-POSITION_SWATCHES = dict(middle="navy", side="brown")
+POSITION_SWATCHES = dict(middle="misty", side="brown")
 
 
 def _resolve_position_swatches():

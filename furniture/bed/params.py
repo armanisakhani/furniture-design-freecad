@@ -35,7 +35,7 @@ STYLES = {
     5: dict(drawer_style="inset", mattress_gap_width=0, has_leg_frame=False, box_color_by_position=False),
     # Same as style 5, except every box is a single solid color instead of
     # a 2-tone body/drawer-front (colors.py's MIDDLE_BOX_COLOR/
-    # SIDE_BOX_COLOR) — the middle box one color (navy by default), the 2
+    # SIDE_BOX_COLOR) — the middle box one color (misty by default), the 2
     # side boxes another (brown by default).
     6: dict(drawer_style="inset", mattress_gap_width=0, has_leg_frame=False, box_color_by_position=True),
 }
@@ -130,7 +130,7 @@ BOX_SHELL_ALL_NEW = os.environ.get("BOX_SHELL_ALL_NEW", "") not in ("", "0", "fa
 # middle box (box_index == BOX_COUNT // 2, only when BOX_COUNT is odd —
 # with an even count there's no single middle box, so this has no effect)
 # gets colors.MIDDLE_BOX_COLOR, the other (side) boxes get
-# colors.SIDE_BOX_COLOR — e.g. a navy middle box between 2 solid-brown
+# colors.SIDE_BOX_COLOR — e.g. a misty middle box between 2 solid-brown
 # side boxes. Set per style (STYLE=6 turns it on, see STYLES above); still
 # overridable on top of any style with its own env var, same as
 # HAS_LEG_FRAME etc: `BOX_COLOR_BY_POSITION=1 make view-bed`. See
