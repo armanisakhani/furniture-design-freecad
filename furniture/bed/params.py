@@ -28,15 +28,16 @@ import colors
 # own same-named env var (wins over the style's value):
 # `DRAWER_STYLE=inset`, `MATTRESS_TO_FRAME_GAP_WIDTH=50`, `HAS_LEG_FRAME=0`.
 STYLES = {
-    1: dict(drawer_style="overlay_over_box", mattress_gap_width=0, has_leg_frame=True, middle_box_reverse_color=False),
-    2: dict(drawer_style="overlay_under_box", mattress_gap_width=100, has_leg_frame=True, middle_box_reverse_color=False),
-    3: dict(drawer_style="inset", mattress_gap_width=100, has_leg_frame=True, middle_box_reverse_color=False),
-    4: dict(drawer_style="inset", mattress_gap_width=0, has_leg_frame=True, middle_box_reverse_color=False),
-    5: dict(drawer_style="inset", mattress_gap_width=0, has_leg_frame=False, middle_box_reverse_color=False),
-    # Same as style 5, except the middle box's body/drawer-front colors
-    # (colors.py) are swapped — a color-preview variant, e.g. a navy
-    # middle box between 2 misty ones.
-    6: dict(drawer_style="inset", mattress_gap_width=0, has_leg_frame=False, middle_box_reverse_color=True),
+    1: dict(drawer_style="overlay_over_box", mattress_gap_width=0, has_leg_frame=True, box_color_by_position=False),
+    2: dict(drawer_style="overlay_under_box", mattress_gap_width=100, has_leg_frame=True, box_color_by_position=False),
+    3: dict(drawer_style="inset", mattress_gap_width=100, has_leg_frame=True, box_color_by_position=False),
+    4: dict(drawer_style="inset", mattress_gap_width=0, has_leg_frame=True, box_color_by_position=False),
+    5: dict(drawer_style="inset", mattress_gap_width=0, has_leg_frame=False, box_color_by_position=False),
+    # Same as style 5, except every box is a single solid color instead of
+    # a 2-tone body/drawer-front (colors.py's MIDDLE_BOX_COLOR/
+    # SIDE_BOX_COLOR) — the middle box one color (navy by default), the 2
+    # side boxes another (brown by default).
+    6: dict(drawer_style="inset", mattress_gap_width=0, has_leg_frame=False, box_color_by_position=True),
 }
 
 
@@ -51,8 +52,8 @@ def _resolve_style():
         values["mattress_gap_width"] = int(os.environ["MATTRESS_TO_FRAME_GAP_WIDTH"])
     if os.environ.get("HAS_LEG_FRAME"):
         values["has_leg_frame"] = os.environ["HAS_LEG_FRAME"] not in ("0", "false", "False")
-    if os.environ.get("MIDDLE_BOX_REVERSE_COLOR"):
-        values["middle_box_reverse_color"] = os.environ["MIDDLE_BOX_REVERSE_COLOR"] not in ("0", "false", "False")
+    if os.environ.get("BOX_COLOR_BY_POSITION"):
+        values["box_color_by_position"] = os.environ["BOX_COLOR_BY_POSITION"] not in ("0", "false", "False")
     return values
 
 
@@ -124,15 +125,17 @@ PVC_THICKNESS = 2
 # orthogonal to the style presets: `BOX_SHELL_ALL_NEW=1 make cutlist-bed`.
 BOX_SHELL_ALL_NEW = os.environ.get("BOX_SHELL_ALL_NEW", "") not in ("", "0", "false", "False")
 
-# Swap BODY_COLOR/DRAWER_FRONT_COLOR (colors.py) on the single middle box
-# only (box_index == BOX_COUNT // 2, and only when BOX_COUNT is odd — with
-# an even count there's no single middle box, so this has no effect) — e.g.
-# preview the assembled bed with the middle box's body in the drawer-front
-# color and vice versa, without changing the color scheme everywhere. Set
-# per style (STYLE=6 turns it on, see STYLES above); still overridable on
-# top of any style with its own env var, same as HAS_LEG_FRAME etc:
-# `MIDDLE_BOX_REVERSE_COLOR=1 make view-bed`. See box.py's create_box.
-MIDDLE_BOX_REVERSE_COLOR = _style["middle_box_reverse_color"]
+# Give every box a single solid color instead of a 2-tone body/
+# drawer-front, that color depending on the box's position: the single
+# middle box (box_index == BOX_COUNT // 2, only when BOX_COUNT is odd —
+# with an even count there's no single middle box, so this has no effect)
+# gets colors.MIDDLE_BOX_COLOR, the other (side) boxes get
+# colors.SIDE_BOX_COLOR — e.g. a navy middle box between 2 solid-brown
+# side boxes. Set per style (STYLE=6 turns it on, see STYLES above); still
+# overridable on top of any style with its own env var, same as
+# HAS_LEG_FRAME etc: `BOX_COLOR_BY_POSITION=1 make view-bed`. See
+# box.py's create_box.
+BOX_COLOR_BY_POSITION = _style["box_color_by_position"]
 
 # --- Drawer -----------------------------------------------------------
 DRAWERS_PER_BOX = 2

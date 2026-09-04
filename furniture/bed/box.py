@@ -72,6 +72,7 @@ assembled bed. Phase 6 should revisit these per box position.
 
 import FreeCAD as App
 
+import colors
 import params
 from core.panel import create_assembly_panel, IDENTITY, ROT_X90, ROT_Y90
 
@@ -98,15 +99,18 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
     box_height = params.BOX_HEIGHT
     interior_height = params.BOX_INTERIOR_HEIGHT
 
-    # MIDDLE_BOX_REVERSE_COLOR (params.py): on the single middle box only
-    # (odd BOX_COUNT, box_index == BOX_COUNT // 2), swap body/drawer-front
-    # colors instead of the usual params.BODY_COLOR/DRAWER_FRONT_COLOR.
+    # BOX_COLOR_BY_POSITION (params.py): every box a single solid color
+    # instead of the usual 2-tone params.BODY_COLOR/DRAWER_FRONT_COLOR —
+    # the single middle box (odd BOX_COUNT, box_index == BOX_COUNT // 2)
+    # gets colors.MIDDLE_BOX_COLOR, the other (side) boxes get
+    # colors.SIDE_BOX_COLOR.
     is_middle_box = (
         params.BOX_COUNT % 2 == 1 and box_index == params.BOX_COUNT // 2
     )
-    if params.MIDDLE_BOX_REVERSE_COLOR and is_middle_box:
-        body_color = params.DRAWER_FRONT_COLOR
-        drawer_front_color = params.BODY_COLOR
+    if params.BOX_COLOR_BY_POSITION:
+        box_color = colors.MIDDLE_BOX_COLOR if is_middle_box else colors.SIDE_BOX_COLOR
+        body_color = box_color
+        drawer_front_color = box_color
     else:
         body_color = params.BODY_COLOR
         drawer_front_color = params.DRAWER_FRONT_COLOR

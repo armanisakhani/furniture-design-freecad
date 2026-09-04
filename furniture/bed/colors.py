@@ -55,3 +55,26 @@ _palette = _resolve_palette()
 
 BODY_COLOR = swatch_rgb(_palette["body"])
 DRAWER_FRONT_COLOR = swatch_rgb(_palette["drawer_front"])
+
+# --- Position swatches: one solid color per box, by position -----------
+# An alternative to the body/drawer_front split above: instead of each box
+# having a 2-tone body/front, every box is a single solid color, and that
+# color depends on the box's position — the middle box one color, the 2
+# side boxes another (e.g. a navy middle box between 2 solid-brown side
+# boxes). Turned on via BOX_COLOR_BY_POSITION (params.py, set per STYLE).
+POSITION_SWATCHES = dict(middle="navy", side="brown")
+
+
+def _resolve_position_swatches():
+    swatches = dict(POSITION_SWATCHES)
+    if os.environ.get("MIDDLE_BOX_SWATCH"):
+        swatches["middle"] = os.environ["MIDDLE_BOX_SWATCH"]
+    if os.environ.get("SIDE_BOX_SWATCH"):
+        swatches["side"] = os.environ["SIDE_BOX_SWATCH"]
+    return swatches
+
+
+_position = _resolve_position_swatches()
+
+MIDDLE_BOX_COLOR = swatch_rgb(_position["middle"])
+SIDE_BOX_COLOR = swatch_rgb(_position["side"])
