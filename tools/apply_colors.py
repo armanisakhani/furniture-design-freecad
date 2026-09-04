@@ -29,3 +29,11 @@ else:
             count += 1
     doc.recompute()
     print(f"Applied PanelColor to {count} object(s) in '{doc.Name}'.")
+
+    # Same missing-view-data issue, different symptom: a plain Part::Box
+    # (the mattress placeholder, bed.py — not a Panel, so it's skipped
+    # above) defaults to Visibility=False on a headless-created document,
+    # unlike every Part::FeaturePython Panel, which defaults to visible.
+    mattress = doc.getObject("MattressPlaceholder")
+    if mattress is not None and mattress.ViewObject is not None:
+        mattress.ViewObject.Visibility = True

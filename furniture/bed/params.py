@@ -27,7 +27,7 @@ import os
 # `DRAWER_OVERLAY_STYLE=rail_above_drawer`, `MATTRESS_TO_FRAME_GAP_WIDTH=50`.
 STYLES = {
     1: dict(drawer_overlay_style="box_over_drawer", mattress_gap_width=0),
-    2: dict(drawer_overlay_style="rail_above_drawer", mattress_gap_width=10),
+    2: dict(drawer_overlay_style="rail_above_drawer", mattress_gap_width=100),
 }
 
 
