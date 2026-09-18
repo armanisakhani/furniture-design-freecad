@@ -38,8 +38,12 @@ def main():
     doc.recompute()
     doc.saveAs(OUTPUT_FILE)
 
+    mirror_panels = 5 if params.HAS_MIRROR else 0  # 2 rails + 2 stiles + 1 pane
     print(f"Created {OUTPUT_FILE}")
-    print(f"Total panels: {len(panels)} (expected 5 shell + {params.DRAWER_COUNT} x 9 drawer)")
+    print(
+        f"Total panels: {len(panels)} (expected 5 shell + 6 bracket + "
+        f"{params.DRAWER_COUNT} x 9 drawer + {mirror_panels} mirror)"
+    )
 
     # X: 0..WIDTH. Y: Inset Face panels land flush at Y=0 (the shell's own
     # open-face plane) — the furthest-forward point of the carcass itself
@@ -47,13 +51,17 @@ def main():
     # -(HANDLE_STANDOFF + HANDLE_BAR_SIZE); DEPTH is the furthest back. Z:
     # floor (0, no raised base — see params.py's Base/feet section) to the
     # top of the Left/Right side panels (HEIGHT), the tallest feature
-    # (SIDE_TOP_LIP above the Top panel's own surface).
+    # (SIDE_TOP_LIP above the Top panel's own surface) — unless HAS_MIRROR
+    # reaches higher still (HEIGHT + MIRROR_HANG_GAP + MIRROR_OUTER_HEIGHT).
+    zmax = params.HEIGHT
+    if params.HAS_MIRROR:
+        zmax = params.HEIGHT + params.MIRROR_HANG_GAP + params.MIRROR_OUTER_HEIGHT
     verify_footprint(
         "dresser_test", panels,
         expected=dict(
             xmin=0, xmax=params.WIDTH,
             ymin=-(params.HANDLE_STANDOFF + params.HANDLE_BAR_SIZE), ymax=params.DEPTH,
-            zmin=0, zmax=params.HEIGHT,
+            zmin=0, zmax=zmax,
         ),
     )
 

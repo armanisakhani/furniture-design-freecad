@@ -7,6 +7,7 @@ a longer distance to fit the whole row.
 
 import os
 
+import FreeCAD as App
 import FreeCADGui as Gui
 from PySide import QtGui
 

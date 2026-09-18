@@ -29,8 +29,9 @@ import colors
 # `DRAWER_STYLE=inset`, `MATTRESS_TO_FRAME_GAP_WIDTH=50`, `HAS_LEG_FRAME=0`.
 STYLES = {
     1: dict(drawer_style="inset", mattress_gap_width=0, has_leg_frame=False, box_color_by_position=False),
+    2: dict(drawer_style="inset", mattress_gap_width=100, has_leg_frame=False, box_color_by_position=False),
     5: dict(drawer_style="overlay_over_box", mattress_gap_width=0, has_leg_frame=True, box_color_by_position=False),
-    2: dict(drawer_style="overlay_under_box", mattress_gap_width=100, has_leg_frame=True, box_color_by_position=False),
+    7: dict(drawer_style="overlay_under_box", mattress_gap_width=100, has_leg_frame=True, box_color_by_position=False),
     3: dict(drawer_style="inset", mattress_gap_width=100, has_leg_frame=True, box_color_by_position=False),
     4: dict(drawer_style="inset", mattress_gap_width=0, has_leg_frame=True, box_color_by_position=False),
     6: dict(drawer_style="inset", mattress_gap_width=0, has_leg_frame=False, box_color_by_position=True),

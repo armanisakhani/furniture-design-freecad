@@ -180,6 +180,23 @@ HANDLE_BAR_SIZE = 10  # TBD: bar cross-section (mm) — not listed on the produc
 HANDLE_STANDOFF = 25  # TBD: projection from the Face (mm) — not listed on the product page
 HANDLE_COLOR = colors.swatch_rgb("metal")
 
+# --- Top panel support brackets (نبشی) --------------------------------
+# The Top panel is Inset (see TOP_PANEL_MODE above), so unlike the Bottom
+# panel (which rests on the floor) or the Back panel (which faces the
+# wall), it has no naturally hidden side to screw from — its own edges
+# only butt against the Left/Right/Back panels' own INNER faces, inside
+# the cavity. Per the user's own construction brief: 3 L-shaped metal
+# corner brackets (one against each of Left/Right/Back's own inner face,
+# see _add_top_brackets in dresser.py) hold it up — one leg screwed to
+# the panel's inner face, the other screwed to the Top panel's own
+# underside, both hidden inside the cavity. Modeled the same box-only
+# way as the drawer handle (2 thin Panel plates forming an L, per
+# bracket) since the user asked for these to actually show in the model.
+BRACKET_LEG = 30  # TBD: how far each leg reaches (mm) — no datasheet yet
+BRACKET_WIDTH = 25  # TBD: bracket width along its mounted edge (mm)
+BRACKET_THICKNESS = 2  # TBD: steel plate thickness (mm)
+BRACKET_COLOR = colors.swatch_rgb("metal")
+
 # Per-side horizontal clearance (X) between the drawer carcass and the
 # dresser's own opening, for slide hardware. Same ballpark as
 # furniture/bed's RAIL_CLEARANCE — not the focus of this first draft (the
@@ -231,16 +248,24 @@ DRAWER_WIDTH = WIDTH - 2 * MDF_THICKNESS - 2 * RAIL_CLEARANCE
 # Left/Right panels resting on top of its 2 edges — never inset.
 #
 # The Top panel has 2 modes (TOP_PANEL_MODE):
-#   "inset" (default): sits BETWEEN the 2 side panels, which end flush
-#     with its own top surface — no lip, every drawer (including the top
-#     one) is the same DRAWER_FACE_HEIGHT band. Needed for the 2-tone
+#   "inset" (default, standalone dresser): sits BETWEEN the 2 side
+#     panels, which then run SIDE_TOP_LIP (one MDF_THICKNESS) taller than
+#     it, forming a small open lip on each end (no separate frame/tray
+#     piece) — the topmost drawer's own Face rises to fill it, reaching
+#     flush with the sides' top edge. Needed for the 2-tone
 #     body/drawer-front look — the side panels stay visible as a
 #     continuous vertical strip.
-#   "on_top": a full WIDTH x DEPTH panel resting ON TOP of the side
-#     panels, mirroring the Bottom panel's own relationship to them (just
-#     flipped). Used for a standalone dresser-like unit that needs a
-#     flat, unbroken top surface — e.g. a piece something else rests on
-#     (see furniture/wardrobe's two-piece layout).
+#   "on_top" (furniture/wardrobe's bottom unit): a full WIDTH x DEPTH
+#     panel resting ON TOP of the side panels, flush, mirroring the
+#     Bottom panel's own relationship to them (just flipped) — no lip
+#     concept applies here, since nothing is inset. Used for a
+#     standalone unit that needs a flat, unbroken top surface for
+#     something else to rest on (see furniture/wardrobe's two-piece
+#     layout) — that's also why its own drawer heights must stay
+#     uniform (no TOP_DRAWER_FACE_EXTRA_HEIGHT) rather than matching the
+#     "inset" dresser's own lip: the wardrobe's Bottom Unit and Hanging
+#     Unit are 2 separate freestanding boxes, not one dresser-shaped
+#     piece, so there's no equivalent "recessed top" to fill.
 TOP_PANEL_MODE = os.environ.get("TOP_PANEL_MODE", "inset")
 if TOP_PANEL_MODE not in ("inset", "on_top"):
     raise ValueError(f"Unknown TOP_PANEL_MODE={TOP_PANEL_MODE!r}; must be 'inset' or 'on_top'")
@@ -254,10 +279,18 @@ if TOP_PANEL_MODE == "inset":
     TOP_PANEL_X_MIN = MDF_THICKNESS
     TOP_PANEL_Y_MIN = DRAWER_FRONT_SETBACK
     TOP_PANEL_DEPTH = DEPTH - TOP_PANEL_Y_MIN
-    SIDE_HEIGHT = INTERIOR_HEIGHT + MDF_THICKNESS
+    # The Top panel sits one MDF_THICKNESS below the sides' own top edge
+    # (per the user's brief) — the sides simply run SIDE_TOP_LIP taller,
+    # forming a small open lip on each end (no separate frame/tray
+    # piece). The topmost drawer's own Face rises to fill that lip too,
+    # reaching flush with the sides' top edge (TOP_DRAWER_FACE_EXTRA_HEIGHT
+    # below) instead of stopping at the Top panel's own underside like
+    # every other drawer.
+    SIDE_TOP_LIP = MDF_THICKNESS
+    SIDE_HEIGHT = INTERIOR_HEIGHT + MDF_THICKNESS + SIDE_TOP_LIP
     HEIGHT = MDF_THICKNESS + SIDE_HEIGHT
     TOP_PANEL_Z_MIN = MDF_THICKNESS + INTERIOR_HEIGHT
-    TOP_DRAWER_FACE_EXTRA_HEIGHT = 0
+    TOP_DRAWER_FACE_EXTRA_HEIGHT = MDF_THICKNESS + SIDE_TOP_LIP
 else:  # "on_top"
     TOP_PANEL_WIDTH = WIDTH
     TOP_PANEL_X_MIN = 0
@@ -279,3 +312,52 @@ else:  # "on_top"
 RECLAIMED_MDF_COLOR = colors.swatch_rgb("white")
 BODY_COLOR = colors.swatch_rgb(MAIN_COLOR)
 DRAWER_FRONT_COLOR = colors.swatch_rgb(ALTERNATE_COLOR)
+
+# --- Mirror (آینه, optional) -----------------------------------------------
+# Wall-mounted, built as part of this same dresser (not a separate
+# furniture/ module — orders/combine_order.py only lays items out side
+# by side on the floor, with no way to float one above another, so a
+# piece meant to hang above the dresser has to be part of the dresser's
+# own build instead). HAS_MIRROR off by default — every existing
+# STYLE/test/cutlist keeps working unchanged; set HAS_MIRROR=1 to add it.
+#
+# A plain 4-piece MDF frame (2 rails spanning the full outer width, 2
+# stiles fitting between them — butt joints, no miters, buildable with
+# just a handsaw and square) around a glued-in mirror pane, centered
+# above the dresser's own Top panel by MIRROR_HANG_GAP, flush against
+# the same wall plane as the Back panel (Y=DEPTH). The pane sits at the
+# frame's own back (against the wall), recessed behind its front face —
+# a shallow "shadow box" reveal, the simplest option without a routed
+# rabbet; real mounting (mirror mastic/corner clips) isn't modeled, same
+# "not worth modeling" convention as the drawer-slide hardware.
+#
+# Mirror width picked as 2/3 of this dresser's own WIDTH (900mm) — the
+# standard 2/3-3/4 proportion for a mirror over a dresser, so it reads
+# proportional rather than stranded or top-heavy. Height is a standard
+# portrait mirror proportion, not derived from the dresser. Frame border
+# narrower than the ~50-75mm standard range, per the user's own request
+# (looked too heavy stacked visually right above the dresser).
+HAS_MIRROR = bool(int(os.environ.get("HAS_MIRROR", "0")))
+# Horizontal position over the dresser's own Top: "center" (default),
+# "left" (flush with the dresser's own left side), or "right" (flush with
+# the right side) — e.g. useful to shift the mirror away from a
+# neighboring item in a combined order.
+MIRROR_ALIGN = os.environ.get("MIRROR_ALIGN", "center")
+if MIRROR_ALIGN not in ("left", "right", "center"):
+    raise ValueError(f"MIRROR_ALIGN must be left/right/center, got {MIRROR_ALIGN!r}")
+MIRROR_WIDTH = 600  # TBD: confirm against 2/3-3/4 of WIDTH (900mm)
+# Sized so the frame's own top edge lands flush with the wardrobe's own
+# ceiling (furniture/wardrobe/params.py's TWO_PIECE_HEIGHT=1800mm) when
+# mounted above this dresser in a combined order — not a standard
+# portrait-mirror proportion; if HEIGHT/MIRROR_HANG_GAP/
+# MIRROR_FRAME_BORDER_WIDTH or the wardrobe's own height changes, this
+# needs re-deriving: MIRROR_HEIGHT = 1800 - HEIGHT - MIRROR_HANG_GAP -
+# 2 * MIRROR_FRAME_BORDER_WIDTH.
+MIRROR_HEIGHT = 722
+MIRROR_THICKNESS = 4  # TBD: typical mirror glass (mm)
+MIRROR_COLOR = colors.swatch_rgb("glass")
+MIRROR_FRAME_BORDER_WIDTH = 40  # TBD: user asked for slimmer than the ~50-75mm standard range
+MIRROR_FRAME_THICKNESS = MDF_THICKNESS
+MIRROR_HANG_GAP = 150  # TBD: within the 100-200mm standard "above the dresser" range
+MIRROR_OUTER_WIDTH = MIRROR_WIDTH + 2 * MIRROR_FRAME_BORDER_WIDTH
+MIRROR_OUTER_HEIGHT = MIRROR_HEIGHT + 2 * MIRROR_FRAME_BORDER_WIDTH

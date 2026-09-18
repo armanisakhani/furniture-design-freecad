@@ -42,9 +42,18 @@ FURNITURE = {
 
 def parse_order(spec):
     """"bed:1,dresser:2:STYLE=2" -> [
-        {"name": "bed", "qty": 1, "overrides": {}, "instance_key": "bed-0"},
-        {"name": "dresser", "qty": 2, "overrides": {"STYLE": "2"}, "instance_key": "dresser-1"},
-    ]"""
+        {"name": "bed", "qty": 1, "overrides": {}, "instance_key": "bed-0", "gap_after": None},
+        {"name": "dresser", "qty": 2, "overrides": {"STYLE": "2"}, "instance_key": "dresser-1", "gap_after": None},
+    ]
+
+    An entry's overrides may include a "GAP" key (e.g.
+    "dresser:1:GAP=0,wardrobe:1" — 0mm between the dresser and whatever
+    comes right after it, touching), popped out here rather than passed
+    through as a furniture build env var since it isn't a params.py
+    concern — combine_order.py's own GAP constant reads it back as
+    entry["gap_after"] (falling back to its own default when None), the
+    space added after each of this entry's own copies (so it governs the
+    gap before the NEXT entry starts, not before this one)."""
     entries = []
     for index, part in enumerate(spec.split(",")):
         part = part.strip()
@@ -60,7 +69,11 @@ def parse_order(spec):
             for pair in fields[2].split(";"):
                 key, _, value = pair.partition("=")
                 overrides[key.strip()] = value.strip()
-        entries.append(dict(name=name, qty=qty, overrides=overrides, instance_key=f"{name}-{index}"))
+        gap_after = overrides.pop("GAP", None)
+        entries.append(dict(
+            name=name, qty=qty, overrides=overrides, instance_key=f"{name}-{index}",
+            gap_after=float(gap_after) if gap_after is not None else None,
+        ))
     if not entries:
         raise ValueError(f"Empty ORDER={spec!r}; expected e.g. 'bed:1,dresser:1,wardrobe:1'")
     return entries

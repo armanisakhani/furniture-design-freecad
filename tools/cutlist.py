@@ -58,6 +58,12 @@ SHEET_SIZES = {
 KERF = 3        # mm, saw blade width consumed per cut
 TRIM_MARGIN = 10  # mm, unusable strip left at each sheet edge
 
+# Reclaimed/white stock (hidden structural panels) — TBD, configurable:
+# the user's own assumed default size for the white sheets these are cut
+# from, so the reclaimed section can report a sheet count too instead of
+# "no fixed size, from scrap."
+WHITE_SHEET_SIZE = (1800, 850)
+
 COLOR_NAMES = {
     (0.31, 0.44, 0.5): "میستی (Misty / Body)",
     (0.43, 0.35, 0.28): "قهوه‌ای (Brown / Drawer Face)",
@@ -91,12 +97,16 @@ def group_new_stock(panels):
 
 
 def group_reclaimed(panels):
-    groups = defaultdict(lambda: dict(qty=0, labels=[]))
+    """{material: {(length, width, thickness): {qty, labels}}} — same shape
+    as group_new_stock (grouped by material instead of color), so the same
+    pack_onto/utilization nesting can run per material group; different
+    materials (MDF vs Fiber) don't share a sheet."""
+    groups = defaultdict(lambda: defaultdict(lambda: dict(qty=0, labels=[])))
     for p in panels:
         if p["stock_source"] != "reclaimed":
             continue
-        key = (round(p["length"], 1), round(p["width"], 1), p["thickness"], p["material"])
-        row = groups[key]
+        key = (round(p["length"], 1), round(p["width"], 1), p["thickness"])
+        row = groups[p["material"]][key]
         row["qty"] += 1
         row["labels"].append(p["label"])
     return groups
@@ -147,6 +157,22 @@ def utilization(rows, sheets_used, sheet_w, sheet_h):
     return used_area / (sheets_used * sheet_w * sheet_h) * 100
 
 
+def split_by_fit(rows, sheet_w, sheet_h, kerf=KERF, margin=TRIM_MARGIN):
+    """Splits rows into (fitting, oversized) — a panel that doesn't fit
+    sheet_w x sheet_h in either orientation, even alone, would otherwise
+    crash pack_onto; oversized ones are reported separately instead."""
+    usable_w = sheet_w - 2 * margin
+    usable_h = sheet_h - 2 * margin
+    fitting, oversized = {}, {}
+    for key, row in rows.items():
+        length, width, thickness = key
+        fits = (length + kerf <= usable_w and width + kerf <= usable_h) or (
+            width + kerf <= usable_w and length + kerf <= usable_h
+        )
+        (fitting if fits else oversized)[key] = row
+    return fitting, oversized
+
+
 def report_scenario(scenario_name, path):
     panels = load_panels(path)
     new_groups = group_new_stock(panels)
@@ -174,13 +200,27 @@ def report_scenario(scenario_name, path):
             print(f"    if buying ONLY {sheet_name}: {n} sheet(s)  (~{util:.0f}% material used)")
 
     print("\n" + "=" * 70)
-    print("RECLAIMED / WHITE — بدون سایز ثابت، از اسکرپ موجود")
+    print(f"RECLAIMED / WHITE — نستینگ روی ورق سفید {WHITE_SHEET_SIZE[0]}x{WHITE_SHEET_SIZE[1]}mm")
     print("=" * 70)
-    total_reclaimed = sum(r["qty"] for r in reclaimed.values())
-    print(f"({total_reclaimed} panel total — فقط لیست ابعاد، نیازی به نستینگ نیست)\n")
-    for (length, width, thickness, material), row in sorted(reclaimed.items(), key=lambda kv: -kv[1]["qty"]):
-        print(f"  {length:>7.1f} x {width:>7.1f} x {thickness:>2.0f}mm  {material:<6} qty={row['qty']:<3} "
-              f"({row['labels'][0]}{' ...' if row['qty'] > 1 else ''})")
+    total_reclaimed = sum(r["qty"] for rows in reclaimed.values() for r in rows.values())
+    print(f"({total_reclaimed} panel total)\n")
+    for material, rows in reclaimed.items():
+        total_qty = sum(r["qty"] for r in rows.values())
+        print(f"\n--- {material} ({total_qty} panel) ---")
+        for (length, width, thickness), row in sorted(rows.items()):
+            print(f"  {length:>7.1f} x {width:>7.1f} x {thickness:>2.0f}mm  qty={row['qty']:<3} "
+                  f"({row['labels'][0]}{' ...' if row['qty'] > 1 else ''})")
+        sw, sh = WHITE_SHEET_SIZE
+        fitting, oversized = split_by_fit(rows, sw, sh)
+        print(f"  kerf={KERF}mm, edge trim={TRIM_MARGIN}mm/side, free rotation")
+        if fitting:
+            n, _ = pack_onto(fitting, sw, sh)
+            util = utilization(fitting, n, sw, sh)
+            print(f"    sheets needed: {n}  (~{util:.0f}% material used)")
+        if oversized:
+            print(f"    doesn't fit a single {sw}x{sh}mm sheet even alone — needs bigger stock:")
+            for (length, width, thickness), row in sorted(oversized.items()):
+                print(f"      {length:>7.1f} x {width:>7.1f} x {thickness:>2.0f}mm  qty={row['qty']}")
     print()
 
 

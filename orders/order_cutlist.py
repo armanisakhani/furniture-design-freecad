@@ -70,13 +70,27 @@ def main():
             print(f"    if buying ONLY {sheet_name}: {n} sheet(s)  (~{util:.0f}% material used)")
 
     print("\n" + "=" * 70)
-    print("RECLAIMED / WHITE — بدون سایز ثابت، از اسکرپ موجود")
+    print(f"RECLAIMED / WHITE — نستینگ روی ورق سفید {shared.WHITE_SHEET_SIZE[0]}x{shared.WHITE_SHEET_SIZE[1]}mm (کل سفارش)")
     print("=" * 70)
-    total_reclaimed = sum(r["qty"] for r in reclaimed.values())
+    total_reclaimed = sum(r["qty"] for rows in reclaimed.values() for r in rows.values())
     print(f"({total_reclaimed} panel total)\n")
-    for (length, width, thickness, material), row in sorted(reclaimed.items(), key=lambda kv: -kv[1]["qty"]):
-        print(f"  {length:>7.1f} x {width:>7.1f} x {thickness:>2.0f}mm  {material:<6} qty={row['qty']:<3} "
-              f"({row['labels'][0]}{' ...' if row['qty'] > 1 else ''})")
+    for material, rows in reclaimed.items():
+        total_qty = sum(r["qty"] for r in rows.values())
+        print(f"\n--- {material} ({total_qty} panel) ---")
+        for (length, width, thickness), row in sorted(rows.items()):
+            print(f"  {length:>7.1f} x {width:>7.1f} x {thickness:>2.0f}mm  qty={row['qty']:<3} "
+                  f"({row['labels'][0]}{' ...' if row['qty'] > 1 else ''})")
+        sw, sh = shared.WHITE_SHEET_SIZE
+        fitting, oversized = shared.split_by_fit(rows, sw, sh)
+        print(f"  kerf={shared.KERF}mm, edge trim={shared.TRIM_MARGIN}mm/side, free rotation")
+        if fitting:
+            n, _ = shared.pack_onto(fitting, sw, sh)
+            util = shared.utilization(fitting, n, sw, sh)
+            print(f"    sheets needed: {n}  (~{util:.0f}% material used)")
+        if oversized:
+            print(f"    doesn't fit a single {sw}x{sh}mm sheet even alone — needs bigger stock:")
+            for (length, width, thickness), row in sorted(oversized.items()):
+                print(f"      {length:>7.1f} x {width:>7.1f} x {thickness:>2.0f}mm  qty={row['qty']}")
 
 
 if __name__ == "__main__":

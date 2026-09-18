@@ -20,10 +20,10 @@ from .placement import place_panel, IDENTITY, ROT_X90, ROT_Y90
 
 class Panel:
     """Proxy for a Part::FeaturePython representing one rectangular MDF/PVC/
-    fiber panel. See CONTEXT.md for the visible/stock_source concept this
-    implements."""
+    fiber/glass panel. See CONTEXT.md for the visible/stock_source concept
+    this implements."""
 
-    MATERIALS = ["MDF", "PVC", "Fiber", "Metal"]
+    MATERIALS = ["MDF", "PVC", "Fiber", "Metal", "Glass"]
     STOCK_SOURCES = ["new", "reclaimed"]
 
     def __init__(self, obj):

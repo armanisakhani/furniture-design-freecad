@@ -183,6 +183,34 @@ HANGING_UNIT_TOP_PANEL_Z_MIN = MDF_THICKNESS + HANGING_UNIT_SIDE_HEIGHT
 # Combined height of the 2 stacked units.
 TWO_PIECE_HEIGHT = BOTTOM_UNIT_HEIGHT + HANGING_UNIT_HEIGHT
 
+# --- Side shelves (طبقات کناری) -------------------------------------------
+# 3 small open shelves on the wardrobe's own OUTSIDE side wall (not
+# inside the closet) — for loose personal items (hair dryer, perfume,
+# etc.) that don't need a door. LAYOUT="two_piece" only (mounted on the
+# Hanging Unit's own side panel — see wardrobe.py's _add_side_shelves —
+# since that's a single continuous side board tall enough for all 3
+# without crossing the seam between the 2 units).
+#
+# Depth matches the side panel itself (DEPTH, below) rather than the
+# ~250-300mm ("10-12in") standard shallow-accessory-shelf range, per the
+# user's own correction — reads as sized-to-the-case. Each shelf is its
+# own small board, held by 2 visible L-shaped metal brackets (same
+# construction as furniture/dresser's own Top-panel brackets) screwed to
+# the side panel's OUTSIDE face and the shelf's own underside — a few
+# small screw holes, fully removable, no dado/pin holes needed.
+SIDE_SHELF_COUNT = 3  # confirmed: per the user's own brief
+# Matches the side panel's own DEPTH (550mm) full-length, per the user's
+# own correction — reads as sized-to-the-case rather than a small
+# shallow add-on.
+SIDE_SHELF_DEPTH = DEPTH
+SIDE_SHELF_PROJECTION = 200  # confirmed: user asked for 20cm, not 28cm — stays out of the dresser's own way
+SIDE_SHELF_SPACING = 280  # TBD: vertical pitch between shelves, same standard range
+SIDE_SHELF_START_Z = 1000  # TBD: bottom shelf's own height off the floor (comfortable reach)
+SIDE_SHELF_SIDE = "left"  # TBD: which exterior side wall ("left" or "right")
+SIDE_SHELF_BRACKET_LEG = 30
+SIDE_SHELF_BRACKET_WIDTH = 25
+SIDE_SHELF_BRACKET_THICKNESS = 2
+
 # --- Material / appearance -----------------------------------------------
 RECLAIMED_MDF_COLOR = colors.swatch_rgb("white")
 BODY_COLOR = colors.swatch_rgb(MAIN_COLOR)

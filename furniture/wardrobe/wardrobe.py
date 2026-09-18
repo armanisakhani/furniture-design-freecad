@@ -150,9 +150,15 @@ def _create_two_piece(doc):
     hanging_side_height = params.HANGING_UNIT_SIDE_HEIGHT
 
     add_panel(
+        # Front edge sits exposed at the seam between the 2 freestanding
+        # units (LAYOUT="two_piece" only — one_piece's analogous "Divider"
+        # panel is already visible=True/new for the same reason), so it's
+        # colored to match the body even though it's cut from reclaimed
+        # stock — same edge-color-override pattern as bed/box.py's
+        # DRAWER_OPENING_EDGE_MATCHES_BODY (see CONTEXT.md).
         "HangingBottom", "Hanging Unit - Bottom", width, depth, t,
         IDENTITY, App.Vector(0, 0, base_z),
-        visible=False, stock_source="reclaimed",
+        color=params.BODY_COLOR, visible=False, stock_source="reclaimed",
     )
     add_panel(
         "HangingLeft", "Hanging Unit - Left Side", hanging_side_height, depth, t,
@@ -182,7 +188,75 @@ def _create_two_piece(doc):
     opening_bottom = base_z + t
     _add_doors(add_panel, opening_bottom, ceiling_z)
 
+    _add_side_shelves(add_panel, width)
+
     return panels
+
+
+def _add_side_shelves(add_panel, width):
+    """SIDE_SHELF_COUNT small open shelves on the wardrobe's own OUTSIDE
+    side wall (params.SIDE_SHELF_SIDE), each held by 2 visible L-shaped
+    metal brackets (front + back, so the shelf can't tip forward/back) —
+    same box-only bracket construction as furniture/dresser's own
+    _add_top_brackets, just mounted to the OUTSIDE face (visible
+    fasteners are fine/expected here, unlike the dresser's inset Top)
+    and reaching outward instead of inward. Placed on the Hanging Unit's
+    own side panel — see params.py."""
+    t = params.MDF_THICKNESS
+    depth = params.SIDE_SHELF_DEPTH
+    proj = params.SIDE_SHELF_PROJECTION
+    leg = params.SIDE_SHELF_BRACKET_LEG
+    bw = params.SIDE_SHELF_BRACKET_WIDTH
+    bt = params.SIDE_SHELF_BRACKET_THICKNESS
+    metal_kwargs = dict(material="Metal", color=params.HANDLE_COLOR, visible=True, stock_source="new")
+
+    # Outward direction: +X reaching past the right side panel's own
+    # outside face (X=width), or -X reaching past the left side panel's
+    # own outside face (X=0).
+    outward = +1 if params.SIDE_SHELF_SIDE == "right" else -1
+    face_x = width if params.SIDE_SHELF_SIDE == "right" else 0
+    vert_x_min = face_x if outward > 0 else face_x - bt
+    arm_x_min = face_x if outward > 0 else face_x - leg
+
+    for index in range(params.SIDE_SHELF_COUNT):
+        z_shelf = params.SIDE_SHELF_START_Z + index * params.SIDE_SHELF_SPACING
+        prefix = f"SideShelf{index + 1}"
+        label = f"Side Shelf {index + 1}"
+
+        shelf_x_min = face_x if outward > 0 else face_x - proj
+        add_panel(
+            prefix, label, proj, depth, t, IDENTITY,
+            App.Vector(shelf_x_min, 0, z_shelf),
+            visible=True, stock_source="new",
+        )
+
+        for side, y_center in (("Front", depth * 0.2), ("Back", depth * 0.8)):
+            y_min = y_center - bw / 2
+            add_panel(
+                f"{prefix}Bracket{side}Vertical", f"{label} - Bracket ({side.lower()}, vertical leg)",
+                bt, bw, leg, IDENTITY, App.Vector(vert_x_min, y_min, z_shelf - leg),
+                **metal_kwargs,
+            )
+            add_panel(
+                f"{prefix}Bracket{side}Horizontal", f"{label} - Bracket ({side.lower()}, horizontal leg)",
+                leg, bw, bt, IDENTITY, App.Vector(arm_x_min, y_min, z_shelf - bt),
+                **metal_kwargs,
+            )
+
+    # One spare of the exact Hanging Unit side panel the shelves are
+    # screwed into — repeated bracket removal/reinstallation can strip the
+    # screw holes over time, so a ready replacement avoids rebuilding the
+    # whole side wall. Coincides exactly with the real panel (hidden, so
+    # it adds no visual clutter and no extra footprint) — just one more
+    # line in the cutlist/purchase count.
+    side_name = params.SIDE_SHELF_SIDE.capitalize()
+    side_x = 0 if params.SIDE_SHELF_SIDE != "right" else width - t
+    add_panel(
+        f"Hanging{side_name}Spare", f"Hanging Unit - {side_name} Side (Spare)",
+        params.HANGING_UNIT_SIDE_HEIGHT, params.DEPTH, t, ROT_Y90,
+        App.Vector(side_x, 0, params.BOTTOM_UNIT_HEIGHT + t),
+        visible=False, stock_source="new",
+    )
 
 
 def _add_rod(add_panel, depth, ceiling_z):

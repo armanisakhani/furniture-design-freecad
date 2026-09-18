@@ -22,7 +22,10 @@ from registry import FURNITURE, parse_order, item_paths
 from core.verify import combined_bbox
 
 OUTPUT_FILE = os.path.join(_ORDERS_DIR, "output", "order.FCStd")
-GAP = 300  # mm between items, TBD
+GAP = 300  # mm between items, TBD — default; an entry's own "GAP" override
+           # (see registry.parse_order) replaces this for the space added
+           # after that entry's own copies, e.g. "dresser:1:GAP=0,wardrobe:1"
+           # butts the wardrobe flush against the dresser (0mm, touching).
 FLIP_ROTATION = App.Rotation(App.Vector(0, 0, 1), 180)
 
 
@@ -51,7 +54,13 @@ def main():
             # can't be reused for the shift below.
             for obj in copies:
                 obj.Placement = App.Placement(App.Vector(0, 0, 0), rotation).multiply(obj.Placement)
-            bbox = combined_bbox(copies)
+            # Accessories meant to overhang past the item's own body (e.g.
+            # the wardrobe's side shelves, which float above a neighboring
+            # item on purpose) don't count toward alignment/spacing — only
+            # the item's own footprint does, or "touching" would leave a
+            # real gap the width of the overhang.
+            footprint_copies = [o for o in copies if "Side Shelf" not in (o.Label or "")]
+            bbox = combined_bbox(footprint_copies or copies)
             # Y=0 is the shared "wall": every item's own BACK (its own
             # bbox.YMax — the Back panel for dresser/wardrobe, the
             # headboard for a flipped bed) lands there, with its front
@@ -62,7 +71,8 @@ def main():
             shift = App.Vector(x_offset - bbox.XMin, -bbox.YMax, 0)
             for obj in copies:
                 obj.Placement = App.Placement(obj.Placement.Base + shift, obj.Placement.Rotation)
-            x_offset += bbox.XLength + GAP
+            gap = GAP if entry["gap_after"] is None else entry["gap_after"]
+            x_offset += bbox.XLength + gap
 
         App.closeDocument(source_doc.Name)
 

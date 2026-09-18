@@ -134,6 +134,8 @@ def create_dresser(doc):
         visible=False, stock_source="reclaimed",
     )
 
+    _add_top_brackets(add_panel, width, depth)
+
     # --- Drawers ------------------------------------------------------
     # All drawers share the same X span (inset from WIDTH by the shell's
     # own Left/Right walls, then RAIL_CLEARANCE for slide hardware);  only
@@ -143,7 +145,103 @@ def create_dresser(doc):
         band_z_min = bottom_z + t + index * params.DRAWER_FACE_HEIGHT
         _add_drawer(add_panel, index, drawer_x_min, band_z_min)
 
+    if params.HAS_MIRROR:
+        _add_mirror(add_panel, width, depth)
+
     return panels
+
+
+def _add_mirror(add_panel, width, depth):
+    """Optional wall-mounted mirror (params.HAS_MIRROR), built as part of
+    this same dresser — see params.py's own Mirror section for why. A
+    4-piece butt-jointed MDF frame (2 rails, 2 stiles) around a glued-in
+    pane, above the Top panel (horizontal position per params.MIRROR_ALIGN),
+    flush against the same wall plane (Y=depth) as the Back panel."""
+    t = params.MIRROR_FRAME_THICKNESS
+    bw = params.MIRROR_FRAME_BORDER_WIDTH
+    outer_w = params.MIRROR_OUTER_WIDTH
+    outer_h = params.MIRROR_OUTER_HEIGHT
+    if params.MIRROR_ALIGN == "left":
+        x_min = 0
+    elif params.MIRROR_ALIGN == "right":
+        x_min = width - outer_w
+    else:
+        x_min = width / 2 - outer_w / 2
+    y_min = depth - t
+    z_min = params.HEIGHT + params.MIRROR_HANG_GAP
+
+    kwargs = dict(color=params.BODY_COLOR, visible=True, stock_source="new")
+    add_panel(
+        "MirrorTopRail", "Mirror - Top Rail", outer_w, t, bw, IDENTITY,
+        App.Vector(x_min, y_min, z_min + outer_h - bw), **kwargs,
+    )
+    add_panel(
+        "MirrorBottomRail", "Mirror - Bottom Rail", outer_w, t, bw, IDENTITY,
+        App.Vector(x_min, y_min, z_min), **kwargs,
+    )
+    add_panel(
+        "MirrorLeftStile", "Mirror - Left Stile", bw, t, params.MIRROR_HEIGHT, IDENTITY,
+        App.Vector(x_min, y_min, z_min + bw), **kwargs,
+    )
+    add_panel(
+        "MirrorRightStile", "Mirror - Right Stile", bw, t, params.MIRROR_HEIGHT, IDENTITY,
+        App.Vector(x_min + outer_w - bw, y_min, z_min + bw), **kwargs,
+    )
+    # Pane: glued to the frame's own back (Y=y_min, the wall side),
+    # recessed behind its front face — see params.py.
+    add_panel(
+        "MirrorPane", "Mirror Pane", params.MIRROR_WIDTH, params.MIRROR_THICKNESS,
+        params.MIRROR_HEIGHT, IDENTITY,
+        App.Vector(x_min + bw, y_min, z_min + bw),
+        material="Glass", color=params.MIRROR_COLOR, visible=True, stock_source="new",
+    )
+
+
+def _add_top_brackets(add_panel, width, depth):
+    """3 L-shaped metal corner brackets (نبشی) holding up the inset Top
+    panel — one against each of Left/Right/Back's own inner face, since
+    (unlike Bottom/Back) Top has no naturally hidden side to screw from
+    on its own. Each bracket is 2 thin plates meeting at a right angle,
+    same box-only construction as _add_handle: one leg flush against the
+    carcass panel's inner face, the other flush against the Top panel's
+    own underside — both hidden inside the cavity. See params.py."""
+    t = params.MDF_THICKNESS
+    leg = params.BRACKET_LEG
+    bw = params.BRACKET_WIDTH
+    bt = params.BRACKET_THICKNESS
+    z_top = params.TOP_PANEL_Z_MIN  # Top panel's own underside
+    kwargs = dict(material="Metal", color=params.BRACKET_COLOR, visible=True, stock_source="new")
+
+    def side_bracket(prefix, label, x_face, x_inward):
+        """x_face: world X of the side panel's own inner face. x_inward:
+        +1 (Left, bracket reaches toward +X) or -1 (Right, toward -X)."""
+        y_min = params.TOP_PANEL_Y_MIN + (params.TOP_PANEL_DEPTH - bw) / 2
+        leg_x_min = x_face if x_inward > 0 else x_face - bt
+        add_panel(
+            f"{prefix}BracketVertical", f"{label} - Bracket (vertical leg)",
+            leg, bw, bt, ROT_Y90, App.Vector(leg_x_min, y_min, z_top - leg), **kwargs,
+        )
+        arm_x_min = x_face if x_inward > 0 else x_face - leg
+        add_panel(
+            f"{prefix}BracketHorizontal", f"{label} - Bracket (horizontal leg)",
+            leg, bw, bt, IDENTITY, App.Vector(arm_x_min, y_min, z_top - bt), **kwargs,
+        )
+
+    side_bracket("Left", "Left", t, +1)
+    side_bracket("Right", "Right", width - t, -1)
+
+    # Back bracket: same idea, rotated 90 degrees (reaches inward along Y
+    # instead of X) — mirrors the Back panel's own ROT_X90 convention.
+    x_min = width / 2 - bw / 2
+    y_face = depth - t  # Back panel's own inner face
+    add_panel(
+        "BackBracketVertical", "Back - Bracket (vertical leg)",
+        bw, leg, bt, ROT_X90, App.Vector(x_min, y_face - bt, z_top - leg), **kwargs,
+    )
+    add_panel(
+        "BackBracketHorizontal", "Back - Bracket (horizontal leg)",
+        bw, leg, bt, IDENTITY, App.Vector(x_min, y_face - leg, z_top - bt), **kwargs,
+    )
 
 
 def _add_drawer(add_panel, index, x_min, band_z_min):
