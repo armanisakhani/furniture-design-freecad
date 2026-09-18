@@ -67,6 +67,7 @@ WHITE_SHEET_SIZE = (1800, 850)
 COLOR_NAMES = {
     (0.31, 0.44, 0.5): "میستی (Misty / Body)",
     (0.43, 0.35, 0.28): "قهوه‌ای (Brown / Drawer Face)",
+    (0.78, 0.83, 0.85): "شیشه‌ی آینه (Mirror Glass)",
 }
 
 
@@ -171,6 +172,35 @@ def split_by_fit(rows, sheet_w, sheet_h, kerf=KERF, margin=TRIM_MARGIN):
         )
         (fitting if fits else oversized)[key] = row
     return fitting, oversized
+
+
+def oversized_reason(length, width, sheet_w, sheet_h, kerf=KERF, margin=TRIM_MARGIN):
+    """Persian, math-backed explanation of why split_by_fit put this panel
+    in its oversized bucket — the usable-area subtraction (margin on each
+    edge) and, for both orientations, which dimension(s) still don't fit
+    even after that. Used by report generation so "doesn't fit" isn't just
+    a bare claim."""
+    usable_w = sheet_w - 2 * margin
+    usable_h = sheet_h - 2 * margin
+
+    def orientation(a, b, usable_a, usable_b):
+        need_a, need_b = a + kerf, b + kerf
+        over = []
+        if need_a > usable_a:
+            over.append(f"طولش با کرف {need_a:.0f}mm > فضای {usable_a:.0f}mm")
+        if need_b > usable_b:
+            over.append(f"عرضش با کرف {need_b:.0f}mm > فضای {usable_b:.0f}mm")
+        return over
+
+    normal = orientation(length, width, usable_w, usable_h)
+    rotated = orientation(width, length, usable_w, usable_h)
+
+    return (
+        f"فضای قابل‌برش ورق {sheet_w:.0f}×{sheet_h:.0f}mm پس از {margin:.0f}mm حاشیه هر لبه: "
+        f"{usable_w:.0f}×{usable_h:.0f}mm. قطعه {length:.0f}×{width:.0f}mm — "
+        f"بدون چرخش: {'؛ '.join(normal) if normal else 'جا می‌شود'}؛ "
+        f"با چرخش ۹۰°: {'؛ '.join(rotated) if rotated else 'جا می‌شود'}."
+    )
 
 
 def report_scenario(scenario_name, path):
