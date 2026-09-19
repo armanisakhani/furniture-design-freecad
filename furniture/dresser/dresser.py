@@ -98,10 +98,15 @@ def create_dresser(doc):
     # unlike the Top panel below, this one is NOT inset between them).
     # Hidden (underside, never seen) — still its own independent "bottom"
     # role (part_roles.yaml), same idea as furniture/bed's box_body.
+    # Reclaimed scrap is always assumed a single color, so if "bottom"
+    # resolves to anything but "reused" (project-wide default, or
+    # overridden for just this order), that's really asking for a real
+    # new sheet in that color, not scrap — see colors.part_effective_role.
     add_panel(
         "Bottom", "Bottom Panel", width, depth, t,
         IDENTITY, App.Vector(0, 0, bottom_z),
-        color=colors.part_override_rgb("bottom"), visible=False, stock_source="reclaimed",
+        color=colors.part_override_rgb("bottom"), visible=False,
+        stock_source="reclaimed" if colors.part_effective_role("bottom") == "reused" else "new",
     )
     # Top: inset BETWEEN the Left/Right panels (TOP_PANEL_WIDTH), not
     # resting on top of them — see module docstring. Its own front edge
@@ -133,11 +138,12 @@ def create_dresser(doc):
     )
     # Back: closes the far (Y=depth) end, same side_height as Left/Right
     # so the carcass stays fully enclosed up to the lip. Hidden — assumed
-    # against a wall.
+    # against a wall. Same reclaimed-vs-new reasoning as Bottom above.
     add_panel(
         "Back", "Back Panel", width, side_height, t,
         ROT_X90, App.Vector(0, depth - t, bottom_z + t),
-        color=colors.part_override_rgb("back"), visible=False, stock_source="reclaimed",
+        color=colors.part_override_rgb("back"), visible=False,
+        stock_source="reclaimed" if colors.part_effective_role("back") == "reused" else "new",
     )
 
     _add_top_brackets(add_panel, width, depth)

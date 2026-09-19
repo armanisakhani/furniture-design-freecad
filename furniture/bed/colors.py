@@ -68,6 +68,23 @@ def part_rgb(part):
     return role_rgb(PART_ROLES[part])
 
 
+def part_effective_role(part):
+    """Which of main/second/reused `part`'s color ACTUALLY resolves to
+    right now, accounting for the same <PART>_ROLE override as
+    part_override_rgb() below — but NOT a <PART>_SWATCH override, which
+    names a specific swatch with no single role of its own (reported as
+    None, never "reused"). Lets a caller decide whether this part's own
+    board can physically come from reclaimed scrap (always assumed a
+    single color, REUSED_MDF_COLOR) or needs a real new sheet in a
+    specific color — reclaimed stock can't supply an arbitrary color on
+    demand, so a part resolving to anything but "reused" needs
+    stock_source="new" regardless of what a caller might otherwise
+    default it to."""
+    if os.environ.get(f"{part.upper()}_SWATCH"):
+        return None
+    return os.environ.get(f"{part.upper()}_ROLE") or PART_ROLES[part]
+
+
 def part_override_rgb(part):
     """part_rgb(part), unless overridden for just this one order/build:
     a <PART>_SWATCH env var (e.g. BOX_TOP_SWATCH, from an order item's own

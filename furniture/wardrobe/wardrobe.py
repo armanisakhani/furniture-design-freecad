@@ -58,7 +58,8 @@ def _create_one_piece(doc):
     add_panel(
         "Bottom", "Bottom Panel", width, depth, t,
         IDENTITY, App.Vector(0, 0, 0),
-        color=colors.part_override_rgb("bottom"), visible=False, stock_source="reclaimed",
+        color=colors.part_override_rgb("bottom"), visible=False,
+        stock_source="reclaimed" if colors.part_effective_role("bottom") == "reused" else "new",
     )
     add_panel(
         "Left", "Left Side Panel", side_height, depth, t,
@@ -73,7 +74,8 @@ def _create_one_piece(doc):
     add_panel(
         "Back", "Back Panel", width, side_height, t,
         ROT_X90, App.Vector(0, depth - t, t),
-        color=colors.part_override_rgb("back"), visible=False, stock_source="reclaimed",
+        color=colors.part_override_rgb("back"), visible=False,
+        stock_source="reclaimed" if colors.part_effective_role("back") == "reused" else "new",
     )
 
     drawer_x_min = t + params.RAIL_CLEARANCE
@@ -120,7 +122,8 @@ def _create_two_piece(doc):
     add_panel(
         "Bottom", "Bottom Panel", width, depth, t,
         IDENTITY, App.Vector(0, 0, 0),
-        color=colors.part_override_rgb("bottom"), visible=False, stock_source="reclaimed",
+        color=colors.part_override_rgb("bottom"), visible=False,
+        stock_source="reclaimed" if colors.part_effective_role("bottom") == "reused" else "new",
     )
     add_panel(
         "BottomLeft", "Bottom Unit - Left Side", bottom_side_height, depth, t,
@@ -135,7 +138,8 @@ def _create_two_piece(doc):
     add_panel(
         "BottomBack", "Bottom Unit - Back", width, bottom_side_height, t,
         ROT_X90, App.Vector(0, depth - t, t),
-        color=colors.part_override_rgb("back"), visible=False, stock_source="reclaimed",
+        color=colors.part_override_rgb("back"), visible=False,
+        stock_source="reclaimed" if colors.part_effective_role("back") == "reused" else "new",
     )
 
     drawer_x_min = t + params.RAIL_CLEARANCE
@@ -155,7 +159,8 @@ def _create_two_piece(doc):
         "BottomTop", "Bottom Unit - Top Panel", width, depth, t,
         IDENTITY, App.Vector(0, 0, params.BOTTOM_UNIT_TOP_PANEL_Z_MIN),
         color=colors.part_override_rgb("bottom_top"), edge_color=colors.role_rgb("main"),
-        visible=True, stock_source="reclaimed",
+        visible=True,
+        stock_source="reclaimed" if colors.part_effective_role("bottom_top") == "reused" else "new",
     )
 
     # --- Hanging unit, resting on top of the bottom unit ------------
@@ -170,7 +175,8 @@ def _create_two_piece(doc):
         "HangingBottom", "Hanging Unit - Bottom", width, depth, t,
         IDENTITY, App.Vector(0, 0, base_z),
         color=colors.part_override_rgb("hanging_bottom"), edge_color=colors.role_rgb("main"),
-        visible=False, stock_source="reclaimed",
+        visible=False,
+        stock_source="reclaimed" if colors.part_effective_role("hanging_bottom") == "reused" else "new",
     )
     add_panel(
         "HangingLeft", "Hanging Unit - Left Side", hanging_side_height, depth, t,
@@ -185,7 +191,8 @@ def _create_two_piece(doc):
     add_panel(
         "HangingBack", "Hanging Unit - Back", width, hanging_side_height, t,
         ROT_X90, App.Vector(0, depth - t, base_z + t),
-        color=colors.part_override_rgb("back"), visible=False, stock_source="reclaimed",
+        color=colors.part_override_rgb("back"), visible=False,
+        stock_source="reclaimed" if colors.part_effective_role("back") == "reused" else "new",
     )
 
     ceiling_z = base_z + params.HANGING_UNIT_TOP_PANEL_Z_MIN

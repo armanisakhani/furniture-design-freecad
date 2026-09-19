@@ -15,18 +15,18 @@ items:
     # just for this item — see furniture/bed/part_roles.yaml for every
     # part name + its own project-wide default.
     part_roles:
-      box_top: main
-      box_body: main
-      box_edge_band: main
-      drawer_face: second
-      headboard: main
-      end_face_foot: main
-      mattress_stop: main
+      box_top: second
+      box_body: second
+      box_edge_band: second
+      drawer_face: main
+      headboard: second
+      end_face_foot: second
+      mattress_stop: second
 
   - furniture: dresser
     qty: 1
-    drawer_color_pattern: "0101"
-    width: 800
+    drawer_color_pattern: "0111"
+    width: 850
     has_mirror: true
     gap_after: 0
     # part_roles reassigns which of main/second/reused a named part uses,
@@ -42,12 +42,12 @@ items:
   - furniture: wardrobe
     qty: 1
     style: two-piece
-    color_pattern: "1_0101"
-    width: 800
+    color_pattern: "1_0111"
+    width: 850
     # one '1'(main)/'0'(second) digit per side shelf, top to bottom — same
     # convention as color_pattern's own drawer digits, independent of
     # part_roles (two_piece only).
-    side_shelf_color_pattern: "000"
+    side_shelf_color_pattern: "111"
     # part_roles reassigns which of main/second/reused a named part uses,
     # just for this item — see furniture/wardrobe/part_roles.yaml for
     # every part name + its own project-wide default. bottom_top/
@@ -57,8 +57,8 @@ items:
     part_roles:
       left: main
       right: main
-      top: main
+      top: reused
       bottom: reused
       back: reused
-      bottom_top: main
-      hanging_bottom: main
+      bottom_top: reused
+      hanging_bottom: reused

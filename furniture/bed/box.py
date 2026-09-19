@@ -145,17 +145,25 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
     # docstring). Top's footprint (BOX_TOP_PANEL_WIDTH/BOX_TOP_X_MIN)
     # instead varies by DRAWER_STYLE — see params.py. Top has its own role
     # ("box_top", colors.py); Bottom + the 2 side walls share a separate
-    # role ("box_body") — both "reused" by default (same MDF batch as the
-    # rest of the shell), but independently changeable. Neither is the PVC
-    # trim color (edge_band_color, below) — that's a 3rd, independent
-    # attribute (colors.py's PART_ROLES docstring has the full breakdown).
+    # role ("box_body") — see part_roles.yaml for its own current default,
+    # independently changeable per order. Neither is the PVC trim color
+    # (edge_band_color, below) — that's a 3rd, independent attribute
+    # (colors.py's PART_ROLES docstring has the full breakdown).
     shell_panel_width = params.BOX_SHELL_PANEL_WIDTH
     shell_panel_x_min = params.BOX_SHELL_PANEL_X_MIN
-    # BOX_SHELL_ALL_NEW (params.py): a cost/logistics toggle, independent of
-    # the above — whether Bottom + the 2 side walls are cut from new stock
-    # (like Top, always new) instead of reclaimed scrap. Doesn't touch
-    # color/visible/footprint, only which stock they're cut from.
-    shell_stock_source = "new" if params.BOX_SHELL_ALL_NEW else "reclaimed"
+    # Reclaimed scrap is always assumed a single color (REUSED_MDF_COLOR,
+    # typically white) — it can't physically supply an arbitrary color on
+    # demand, so if box_body's role resolves to anything but "reused"
+    # (project-wide, per part_roles.yaml, or overridden for just this
+    # order), that's really asking for a new sheet in that color, not
+    # scrap. BOX_SHELL_ALL_NEW (params.py) is a separate, blanket cost/
+    # logistics toggle on top of that — forces new stock regardless of
+    # color. Neither touches color/visible/footprint, only which stock
+    # Bottom + the 2 side walls are cut from.
+    shell_stock_source = (
+        "new" if (params.BOX_SHELL_ALL_NEW or colors.part_effective_role("box_body") != "reused")
+        else "reclaimed"
+    )
     # edge_color=edge_band_color on every shell panel below colors just its
     # own 4 perimeter/cut-edge faces (core/panel.py's EdgeColor, applied as
     # a real per-face ViewObject.DiffuseColor by tools/apply_colors.py) —
