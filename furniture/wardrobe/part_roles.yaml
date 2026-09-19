@@ -12,7 +12,22 @@
 
 left: main         # Left/BottomLeft/HangingLeft side panels (wardrobe.py), both layouts
 right: main        # Right/BottomRight/HangingRight side panels
-top: main          # Top/HangingTop/BottomTop/Divider/HangingBottom — the visible, new-stock horizontal panels
+top: main          # Top/HangingTop/Divider — the truly visible, new-stock ceiling/divider panels
 bottom: reused     # Bottom Panel — hidden base, cut from reclaimed stock by default
 back: reused       # Back/BottomBack/HangingBack — hidden, assumed against a wall, both layouts
-side_shelf: main   # the SIDE_SHELF_COUNT shelf boards themselves (two_piece only)
+
+# Side shelf boards (two_piece only) are NOT one of these roles — each
+# one's own color comes from params.py's SIDE_SHELF_COLOR_PATTERN
+# instead, a '1'(main)/'0'(second) digit per shelf (top to bottom), same
+# convention as DRAWER_COLOR_PATTERN — see furniture/wardrobe/example.yaml.
+
+# BottomTop/HangingBottom (two_piece only) sandwich together at the seam
+# between the 2 stacked units — their own big flat faces (top/bottom) are
+# hidden inside that sandwich (never actually seen), so they're free to be
+# cut from reclaimed stock like any other hidden panel; only their own
+# cut-edge perimeter is exposed right at the seam, and that ALWAYS matches
+# "main" (hardcoded in wardrobe.py, not one of these roles) regardless of
+# what these 2 are set to — see core/panel.py's EdgeColor, colored
+# independently of the body/PanelColor these 2 roles govern.
+bottom_top: reused       # Bottom Unit - Top Panel's own hidden body
+hanging_bottom: reused   # Hanging Unit - Bottom's own hidden body

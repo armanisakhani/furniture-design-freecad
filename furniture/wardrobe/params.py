@@ -197,6 +197,17 @@ TWO_PIECE_HEIGHT = BOTTOM_UNIT_HEIGHT + HANGING_UNIT_HEIGHT
 # the side panel's OUTSIDE face and the shelf's own underside — a few
 # small screw holes, fully removable, no dado/pin holes needed.
 SIDE_SHELF_COUNT = 3  # confirmed: per the user's own brief
+# Per-shelf color, top to bottom — same '1'(main)/'0'(second) digit
+# convention as DRAWER_COLOR_PATTERN/color_pattern's own drawer digits.
+# Independent of part_roles.yaml (same idea as the drawer Face's own
+# color, colors.py's own docstring) — not one of those roles.
+SIDE_SHELF_COLOR_PATTERN = os.environ.get("SIDE_SHELF_COLOR_PATTERN") or "1" * SIDE_SHELF_COUNT
+if len(SIDE_SHELF_COLOR_PATTERN) != SIDE_SHELF_COUNT or any(c not in "01" for c in SIDE_SHELF_COLOR_PATTERN):
+    raise ValueError(
+        f"SIDE_SHELF_COLOR_PATTERN={SIDE_SHELF_COLOR_PATTERN!r} must be a string of "
+        f"{SIDE_SHELF_COUNT} '0'/'1' characters (one per shelf, top to bottom) — "
+        f"got length {len(SIDE_SHELF_COLOR_PATTERN)}"
+    )
 # Matches the side panel's own DEPTH (550mm) full-length, per the user's
 # own correction — reads as sized-to-the-case rather than a small
 # shallow add-on.

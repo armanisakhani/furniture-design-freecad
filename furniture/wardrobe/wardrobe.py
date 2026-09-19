@@ -25,7 +25,7 @@ def create_wardrobe(doc):
 
 def _make_add_panel(doc, panels):
     def add_panel(obj_name, label, length, width_, thickness, rotation,
-                  target_min, material="MDF", color=None,
+                  target_min, material="MDF", color=None, edge_color=None,
                   visible=True, stock_source="new"):
         # Every call below that isn't reclaimed/hidden passes its own
         # explicit color (colors.py's part_override_rgb, per
@@ -34,7 +34,7 @@ def _make_add_panel(doc, panels):
         obj = create_assembly_panel(
             doc, obj_name, label,
             length, width_, thickness, rotation, target_min,
-            material=material, color=color, visible=visible,
+            material=material, color=color, edge_color=edge_color, visible=visible,
             stock_source=stock_source,
             reclaimed_color=colors.REUSED_COLOR,
             new_color=colors.REUSED_COLOR,
@@ -144,10 +144,18 @@ def _create_two_piece(doc):
         _add_drawer(add_panel, index, drawer_x_min, band_z_min)
 
     # Full-width, flat: a real surface for the hanging unit to rest on.
+    # Sandwiched at the seam with HangingBottom below — its own big flat
+    # faces are hidden inside that sandwich (cut from reclaimed stock,
+    # own "bottom_top" role, own color independent of everything else),
+    # but its cut-edge perimeter IS exposed right at the seam, so that
+    # edge always matches "main" regardless (core/panel.py's EdgeColor —
+    # a real per-face color, not a second overlapping object), same idea
+    # as furniture/bed's box_edge_band role (see CONTEXT.md).
     add_panel(
         "BottomTop", "Bottom Unit - Top Panel", width, depth, t,
         IDENTITY, App.Vector(0, 0, params.BOTTOM_UNIT_TOP_PANEL_Z_MIN),
-        color=colors.part_override_rgb("top"), visible=True, stock_source="new",
+        color=colors.part_override_rgb("bottom_top"), edge_color=colors.role_rgb("main"),
+        visible=True, stock_source="reclaimed",
     )
 
     # --- Hanging unit, resting on top of the bottom unit ------------
@@ -155,15 +163,14 @@ def _create_two_piece(doc):
     hanging_side_height = params.HANGING_UNIT_SIDE_HEIGHT
 
     add_panel(
-        # Front edge sits exposed at the seam between the 2 freestanding
-        # units (LAYOUT="two_piece" only — one_piece's analogous "Divider"
-        # panel is already visible=True/new for the same reason), so it's
-        # colored to match the "top" role even though it's cut from
-        # reclaimed stock — a deliberate color override, same idea as
-        # furniture/bed's box_edge_band role (see CONTEXT.md).
+        # Same seam-sandwich reasoning as BottomTop above, mirrored (this
+        # one sits ON TOP of BottomTop instead of below it) — own hidden
+        # body (own "hanging_bottom" role) cut from reclaimed stock, own
+        # cut-edge perimeter always "main" at the exposed seam.
         "HangingBottom", "Hanging Unit - Bottom", width, depth, t,
         IDENTITY, App.Vector(0, 0, base_z),
-        color=colors.part_override_rgb("top"), visible=False, stock_source="reclaimed",
+        color=colors.part_override_rgb("hanging_bottom"), edge_color=colors.role_rgb("main"),
+        visible=False, stock_source="reclaimed",
     )
     add_panel(
         "HangingLeft", "Hanging Unit - Left Side", hanging_side_height, depth, t,
@@ -228,11 +235,19 @@ def _add_side_shelves(add_panel, width):
         prefix = f"SideShelf{index + 1}"
         label = f"Side Shelf {index + 1}"
 
+        # SIDE_SHELF_COLOR_PATTERN reads top to bottom (same convention as
+        # DRAWER_COLOR_PATTERN); index counts from the bottom shelf up
+        # (z_shelf grows with index), so flip it to index into the pattern.
+        from_top = params.SIDE_SHELF_COUNT - 1 - index
+        shelf_color = (
+            colors.MAIN_COLOR if params.SIDE_SHELF_COLOR_PATTERN[from_top] == "1"
+            else colors.SECOND_COLOR
+        )
         shelf_x_min = face_x if outward > 0 else face_x - proj
         add_panel(
             prefix, label, proj, depth, t, IDENTITY,
             App.Vector(shelf_x_min, 0, z_shelf),
-            color=colors.part_override_rgb("side_shelf"), visible=True, stock_source="new",
+            color=shelf_color, visible=True, stock_source="new",
         )
 
         for side, y_center in (("Front", depth * 0.2), ("Back", depth * 0.8)):

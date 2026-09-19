@@ -25,7 +25,7 @@ items:
 
   - furniture: dresser
     qty: 1
-    drawer_color_pattern: "0111"
+    drawer_color_pattern: "0101"
     width: 800
     has_mirror: true
     gap_after: 0
@@ -42,15 +42,23 @@ items:
   - furniture: wardrobe
     qty: 1
     style: two-piece
-    color_pattern: "1_0111"
+    color_pattern: "1_0101"
     width: 800
+    # one '1'(main)/'0'(second) digit per side shelf, top to bottom — same
+    # convention as color_pattern's own drawer digits, independent of
+    # part_roles (two_piece only).
+    side_shelf_color_pattern: "000"
     # part_roles reassigns which of main/second/reused a named part uses,
     # just for this item — see furniture/wardrobe/part_roles.yaml for
-    # every part name + its own project-wide default.
+    # every part name + its own project-wide default. bottom_top/
+    # hanging_bottom are the 2 panels sandwiched at the seam between the
+    # stacked units (two_piece only) — their own exposed cut-edge always
+    # matches "main" regardless (hardcoded, not one of these roles).
     part_roles:
       left: main
       right: main
       top: main
       bottom: reused
       back: reused
-      side_shelf: main
+      bottom_top: main
+      hanging_bottom: main

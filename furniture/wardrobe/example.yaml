@@ -13,6 +13,7 @@ layout: two_piece            # one_piece | two_piece — overrides the style's o
 color_pattern: "1_0111"      # "<door digit>_<drawer pattern>" — overrides the style's own pattern
 door_swatch: null            # e.g. "anthracite" — an independent door color, not just main/second (any furniture/wardrobe/colors.py SWATCHES name)
 width: 800                   # mm, left-right — DEPTH/DRAWER_COUNT/etc. don't scale with this, only WIDTH-derived panels do
+side_shelf_color_pattern: "111"  # one '1'(main)/'0'(second) digit per shelf, top to bottom — same convention as color_pattern's drawer digits (two_piece only)
 
 # Per-part color overrides, just for this one item — see
 # furniture/wardrobe/part_roles.yaml for every part name + its own
@@ -31,7 +32,13 @@ right_swatch: null
 top_swatch: null
 bottom_swatch: null
 back_swatch: null
-side_shelf_swatch: null
+
+# bottom_top/hanging_bottom (two_piece only): the 2 panels sandwiched at
+# the seam between the stacked units — their own hidden body is
+# independently colorable/reclaimable here; their own exposed cut-edge
+# always matches "main" instead, hardcoded (not overridable).
+bottom_top_swatch: null
+hanging_bottom_swatch: null
 
 # Order-wide, not per-item — set once at the top of the order's own YAML:
 #   colors:
