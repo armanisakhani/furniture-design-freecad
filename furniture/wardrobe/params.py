@@ -30,30 +30,31 @@ review.
 
 import os
 
+import yaml
+
 import colors
 
 # --- Style presets ----------------------------------------------------
-# Select with the STYLE env var. Color is NOT one of these knobs (same as
+# Named presets loaded from furniture/wardrobe/styles.yaml (see that file
+# for what each one means). Select with the STYLE env var (an order
+# item's own `style:` key, see orders/specs/<name>.yaml, becomes this
+# same STYLE env var). Color is NOT one of these knobs (same as
 # furniture/bed/furniture/dresser) — it's fully independent of geometry
 # STYLE, driven entirely by colors.py's own MAIN_COLOR/SECOND_COLOR/
-# REUSED_MDF_COLOR + PART_ROLES, plus color_pattern below (still a STYLES
-# knob, since which door/drawer gets which of the 2 colors IS a
-# geometry-adjacent layout choice). color_pattern is "<door digit>_<drawer
-# pattern>", e.g. "1_1000": the digit before "_" picks the doors' color
-# (same '1'=main/'0'=second convention as the drawer pattern after it, one
-# digit per drawer top to bottom). layout is one of LAYOUT's own 2 values
-# (see below).
-STYLES = {
-    1: dict(color_pattern="1_0111", layout="two_piece"),
-    2: dict(color_pattern="0_1111", layout="one_piece"),
-}
+# REUSED_MDF_COLOR + PART_ROLES. layout/color_pattern can each still be
+# overridden on their own on top of the selected style with their own
+# same-named env var.
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "styles.yaml")) as _f:
+    STYLES = yaml.safe_load(_f)
+
+DEFAULT_STYLE = "two-piece"
 
 
 def _resolve_style():
-    style_id = int(os.environ.get("STYLE") or 1)
-    if style_id not in STYLES:
-        raise ValueError(f"Unknown STYLE={style_id}; known styles: {sorted(STYLES)}")
-    values = dict(STYLES[style_id])
+    style_name = os.environ.get("STYLE") or DEFAULT_STYLE
+    if style_name not in STYLES:
+        raise ValueError(f"Unknown STYLE={style_name!r}; known styles: {sorted(STYLES)}")
+    values = dict(STYLES[style_name])
     if os.environ.get("COLOR_PATTERN"):
         values["color_pattern"] = os.environ["COLOR_PATTERN"]
     if os.environ.get("LAYOUT"):

@@ -4,8 +4,8 @@
 # Part::FeaturePython objects themselves, not the ViewObject.
 #
 # Usage:
-#   tools/dump_panels.sh                                    # STYLE=1 default
-#   STYLE=5 MAIN_COLOR=brown tools/dump_panels.sh            # cut-list variant
+#   tools/dump_panels.sh                                          # STYLE=inset default
+#   STYLE=overlay-over-box MAIN_COLOR=brown tools/dump_panels.sh   # cut-list variant
 #
 # Then feed the result into the nesting/cut-list report:
 #   .venv/bin/python tools/cutlist.py

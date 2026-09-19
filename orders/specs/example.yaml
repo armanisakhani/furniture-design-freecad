@@ -1,0 +1,17 @@
+# Example order exercising every optional key at once — see
+# orders/specs/default.yaml for the plain/minimal shape.
+
+colors:
+  main: brown
+  second: white
+
+items:
+  - furniture: bed
+    qty: 1
+    style: inset-mattress-gap   # see furniture/bed/styles.yaml for every preset name
+  - furniture: dresser
+    qty: 2
+    gap_after: 0
+  - furniture: wardrobe
+    style: two-piece            # see furniture/wardrobe/styles.yaml
+    color_pattern: "1_1111"     # overrides just the style's own drawer pattern

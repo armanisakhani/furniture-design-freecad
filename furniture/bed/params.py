@@ -12,16 +12,22 @@ never inline in geometry code, once the real number is known.
 
 import os
 
+import yaml
+
 # --- Style presets ----------------------------------------------------
 # Bundles the handful of parameters that vary together for a design
-# variant, so switching variants is one env var instead of hand-editing
-# several unrelated lines in sync. Select with the STYLE env var, e.g.
-# `STYLE=2 make test-bed` or `STYLE=2 ./tools/view_bed.sh --rebuild` —
-# default is style 1 (today's baseline). Add a new entry here for a new
-# variant. (Env var, not a `--style` CLI flag: freecadcmd's own argument
-# parser rejects unrecognized flags unpredictably, but env vars pass
-# through untouched to every entry point — freecadcmd, the Makefile,
-# view_bed.sh's GUI-launch path — with no extra plumbing.)
+# variant, so switching variants is one name instead of hand-editing
+# several unrelated lines in sync — named presets loaded from
+# furniture/bed/styles.yaml (see that file for the full list + what each
+# one means). Select with the STYLE env var, e.g. `STYLE=inset-raised
+# make test-bed` or `STYLE=inset-raised ./tools/view_bed.sh --rebuild` —
+# default is "inset" (today's baseline). Add a new entry to styles.yaml
+# for a new variant. (Env var, not a `--style` CLI flag: freecadcmd's own
+# argument parser rejects unrecognized flags unpredictably, but env vars
+# pass through untouched to every entry point — freecadcmd, the
+# Makefile, view_bed.sh's GUI-launch path — with no extra plumbing. An
+# order item's own `style:` key, see orders/specs/<name>.yaml, becomes
+# this same STYLE env var for that item's own build.)
 # Any knob can still be overridden on top of the selected style with its
 # own same-named env var (wins over the style's value):
 # `DRAWER_STYLE=inset`, `MATTRESS_TO_FRAME_GAP_WIDTH=50`, `HAS_LEG_FRAME=0`.
@@ -29,22 +35,17 @@ import os
 # Color is NOT one of these knobs — it's fully independent of geometry
 # STYLE (any STYLE pairs with any color), driven entirely by colors.py's
 # own MAIN_COLOR/SECOND_COLOR/REUSED_MDF_COLOR + PART_ROLES. See colors.py.
-STYLES = {
-    1: dict(drawer_style="inset", mattress_gap_width=0, has_leg_frame=False, box_color_by_position=False),
-    2: dict(drawer_style="inset", mattress_gap_width=100, has_leg_frame=False, box_color_by_position=False),
-    5: dict(drawer_style="overlay_over_box", mattress_gap_width=0, has_leg_frame=True, box_color_by_position=False),
-    7: dict(drawer_style="overlay_under_box", mattress_gap_width=100, has_leg_frame=True, box_color_by_position=False),
-    3: dict(drawer_style="inset", mattress_gap_width=100, has_leg_frame=True, box_color_by_position=False),
-    4: dict(drawer_style="inset", mattress_gap_width=0, has_leg_frame=True, box_color_by_position=False),
-    6: dict(drawer_style="inset", mattress_gap_width=0, has_leg_frame=False, box_color_by_position=True),
-}
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "styles.yaml")) as _f:
+    STYLES = yaml.safe_load(_f)
+
+DEFAULT_STYLE = "inset"
 
 
 def _resolve_style():
-    style_id = int(os.environ.get("STYLE") or 1)
-    if style_id not in STYLES:
-        raise ValueError(f"Unknown STYLE={style_id}; known styles: {sorted(STYLES)}")
-    values = dict(STYLES[style_id])
+    style_name = os.environ.get("STYLE") or DEFAULT_STYLE
+    if style_name not in STYLES:
+        raise ValueError(f"Unknown STYLE={style_name!r}; known styles: {sorted(STYLES)}")
+    values = dict(STYLES[style_name])
     if os.environ.get("DRAWER_STYLE"):
         values["drawer_style"] = os.environ["DRAWER_STYLE"]
     if os.environ.get("MATTRESS_TO_FRAME_GAP_WIDTH"):
@@ -112,15 +113,13 @@ BOX_HEIGHT = BOX_INTERIOR_HEIGHT + 2 * MDF_THICKNESS
 # PVC edge-banding tape thickness, glued onto exposed cut edges. Wraps
 # the edge only — does not add to MDF_THICKNESS or affect fitting
 # geometry. Reconciles the reference photos' ~20mm apparent wall
-# thickness: MDF_THICKNESS (16) + 2 * PVC_THICKNESS (2 + 2) = 20.
+# thickness: MDF_THICKNESS (16) + 2 * PVC_THICKNESS (2 + 2) = 20. Not
+# currently read by any geometry (box.py colors the PVC trim via
+# colors.py's "box_edge_band" role + core/panel.py's own EdgeColor
+# property, applied to a panel's real cut-edge faces directly — no
+# separate PVC strip geometry, see box.py's create_box), kept as the
+# real physical reference measurement.
 PVC_THICKNESS = 2
-
-# How far box.py's Top-panel PVC edge-band strips sit above Top's own top
-# surface — confirmed necessary (not just theoretical): sitting exactly
-# coplanar caused visible striping/z-fighting between the 2 surfaces in
-# the live FreeCAD view, per the user. 1mm is enough margin to read
-# cleanly there while staying visually negligible at furniture scale.
-TOP_EDGE_BAND_RISE = 1
 
 # Whether the Box shell's Bottom + 2 long side walls are cut from new stock
 # too (same as the Top panel, which is always new — it bears the mattress)
@@ -137,8 +136,8 @@ BOX_SHELL_ALL_NEW = os.environ.get("BOX_SHELL_ALL_NEW", "") not in ("", "0", "fa
 # with an even count there's no single middle box, so this has no effect)
 # gets colors.MIDDLE_BOX_COLOR, the other (side) boxes get
 # colors.SIDE_BOX_COLOR — e.g. a misty middle box between 2 solid-brown
-# side boxes. Set per style (STYLE=6 turns it on, see STYLES above); still
-# overridable on top of any style with its own env var, same as
+# side boxes. Set per style (STYLE=inset-two-tone turns it on, see
+# styles.yaml); still overridable on top of any style with its own env var, same as
 # HAS_LEG_FRAME etc: `BOX_COLOR_BY_POSITION=1 make view-bed`. See
 # box.py's create_box.
 BOX_COLOR_BY_POSITION = _style["box_color_by_position"]
@@ -253,7 +252,7 @@ def _drawer_style_geometry(style):
             # unsupported by MDF_THICKNESS on each long edge for the bed's
             # entire length (invisible whenever MATTRESS_TO_FRAME_GAP_WIDTH
             # > 0 already tucks the mattress in short of BOX_WIDTH anyway —
-            # caught once STYLE=4 set that gap to 0). Bottom and the 2 side
+            # caught once STYLE=inset-raised set that gap to 0). Bottom and the 2 side
             # walls stay inset (BOX_WIDTH) regardless — they don't bear the
             # mattress, and their now-visible edge frames the recessed
             # drawer (colors.py's "box_edge_band" role).
@@ -286,8 +285,9 @@ BOX_TOP_X_MIN = _drawer_geometry["top_x_min"]
 # the reference, at the user's explicit request"), a mismatch that's fine
 # to leave standing since it's driven by that overlay, not by mattress
 # support. In "inset" there's no such overlay to justify the gap — caught
-# via STYLE=5, where Bottom/the 2 side walls stopped 16mm short of the Top
-# panel on each X edge for no structural reason.
+# once an inset style with HAS_LEG_FRAME=True was tested, where Bottom/the
+# 2 side walls stopped 16mm short of the Top panel on each X edge for no
+# structural reason.
 BOX_SHELL_PANEL_WIDTH = (
     BOX_WIDTH if DRAWER_STYLE == "overlay_over_box" else BOX_TOP_PANEL_WIDTH
 )

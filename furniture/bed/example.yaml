@@ -1,0 +1,28 @@
+# Every parameter furniture/bed/params.py (and colors.py) accepts as an
+# order-item override, each shown at its own default value — see
+# orders/specs/<name>.yaml's `items:` list for where these keys go, and
+# orders/registry.py's load_order() for how an item's keys become env
+# vars. Documentation only: nothing reads this file, copy whichever keys
+# you actually need into a real order item.
+
+furniture: bed
+qty: 1
+gap_after: 300                  # mm gap AFTER this item's own copies, before the next item (orders/registry.py)
+
+style: inset                    # see furniture/bed/styles.yaml for every preset name + what it bundles
+# Any single knob below can still be set on its own, on top of `style`:
+drawer_style: inset             # inset | overlay_over_box | overlay_under_box
+mattress_to_frame_gap_width: 0  # mm, margin each side between the mattress and the frame (both sides)
+has_leg_frame: false            # raises the bed on a leg/support frame — only false is valid outside drawer_style: inset
+box_color_by_position: false    # true: every box 1 solid color by position (middle vs. side) instead of 2-tone body/front
+
+box_shell_all_new: false        # true: Bottom + the 2 side walls also cut from new stock, not reclaimed scrap
+middle_box_swatch: misty        # only used when box_color_by_position: true — any furniture/bed/colors.py SWATCHES name
+side_box_swatch: brown          # only used when box_color_by_position: true
+
+# Order-wide, not per-item — set once at the top of the order's own YAML,
+# applies to every item in it (not just this one):
+#   colors:
+#     main: misty      # MAIN_COLOR — structural/trim parts, see furniture/bed/colors.py's PART_ROLES
+#     second: white     # SECOND_COLOR — drawer faces
+#     reused: white     # REUSED_MDF_COLOR — hidden/reclaimed panels

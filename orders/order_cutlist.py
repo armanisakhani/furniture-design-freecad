@@ -1,18 +1,17 @@
 """
-Combined sheet-buying plan for a whole ORDER (e.g. "bed:1,dresser:1,
-wardrobe:1") — same nesting logic as tools/cutlist.py (which reports one
-furniture design alone), fed one merged panel list across every ordered
-item instead. Sourced from each entry's own build_item.py output (see
-registry.py), repeated per its own quantity. Metal hardware (handles, the
-wardrobe's rod) and PVC edge-banding tape (furniture/bed's Top panel
-trim) are excluded — both are bought (a fitting, a roll of tape), not cut
-from a sheet.
+Combined sheet-buying plan for a whole named order (orders/specs/<name>.yaml)
+— same nesting logic as tools/cutlist.py (which reports one furniture design
+alone), fed one merged panel list across every ordered item instead. Sourced
+from each entry's own build_item.py output (see registry.py), repeated per
+its own quantity. Metal hardware (handles, the wardrobe's rod) and PVC
+edge-banding tape (furniture/bed's Top panel trim) are excluded — both are
+bought (a fitting, a roll of tape), not cut from a sheet.
 
 Plain Python (project's own .venv, not freecadcmd) — see tools/cutlist.py's
 own docstring for why this half of the pipeline doesn't need FreeCAD.
 
 Usage (see tools/order.sh, which does exactly this via run_order.py):
-    ORDER="bed:1,dresser:2:STYLE=2" .venv/bin/python orders/run_order.py
+    ORDER_NAME=default .venv/bin/python orders/run_order.py
 """
 
 import json
@@ -25,17 +24,17 @@ for _p in (_ROOT, os.path.join(_ROOT, "tools")):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from registry import FURNITURE, parse_order, item_paths
+from registry import FURNITURE, load_order, item_paths
 import cutlist as shared  # tools/cutlist.py's own nesting helpers
 
 
-def load_order_panels(entries):
+def load_order_panels(order_name, entries):
     """Returns one combined panel list — each entry's own dumped panels
     repeated `qty` times, labels tagged with an instance number so the
     report can tell them apart, Metal hardware dropped (not sheet stock)."""
     combined = []
     for entry in entries:
-        with open(item_paths(entry["instance_key"])["panels_json"]) as f:
+        with open(item_paths(order_name, entry["instance_key"])["panels_json"]) as f:
             panels = [p for p in json.load(f) if p["material"] not in ("Metal", "PVC")]
         label = FURNITURE[entry["name"]]["label"]
         for instance in range(1, entry["qty"] + 1):
@@ -46,11 +45,14 @@ def load_order_panels(entries):
 
 
 def main():
-    entries = parse_order(os.environ.get("ORDER", ""))
-    panels = load_order_panels(entries)
+    order_name = os.environ.get("ORDER_NAME")
+    if not order_name:
+        raise SystemExit("Set ORDER_NAME to a name under orders/specs/ (e.g. ORDER_NAME=default)")
+    entries = load_order(order_name)["entries"]
+    panels = load_order_panels(order_name, entries)
 
     summary = ", ".join(f"{e['name']} x{e['qty']}" for e in entries)
-    print(f"Order: {summary} — {len(panels)} sheet panels total\n")
+    print(f"Order {order_name!r}: {summary} — {len(panels)} sheet panels total\n")
 
     new_groups = shared.group_new_stock(panels)
     reclaimed = shared.group_reclaimed(panels)

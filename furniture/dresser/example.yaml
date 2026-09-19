@@ -1,0 +1,22 @@
+# Every parameter furniture/dresser/params.py accepts as an order-item
+# override, each shown at its own default value — see
+# orders/specs/<name>.yaml's `items:` list for where these keys go.
+# Documentation only: nothing reads this file, copy whichever keys you
+# actually need into a real order item.
+
+furniture: dresser
+qty: 1
+gap_after: 300                # mm gap AFTER this item's own copies, before the next item (orders/registry.py)
+
+style: standard                # see furniture/dresser/styles.yaml
+drawer_color_pattern: "0111"   # one '1'(main)/'0'(second) digit per drawer, top to bottom — overrides the style's own pattern
+
+top_panel_mode: inset          # inset (standalone dresser) | on_top (furniture/wardrobe's two-piece bottom unit)
+has_mirror: false              # adds a wall-mounted mirror above the dresser's own Top panel
+mirror_align: center           # left | right | center — only matters when has_mirror: true
+
+# Order-wide, not per-item — set once at the top of the order's own YAML:
+#   colors:
+#     main: misty      # MAIN_COLOR — body (see furniture/dresser/colors.py's PART_ROLES)
+#     second: white     # SECOND_COLOR — the drawer_color_pattern's '0' digit
+#     reused: white     # REUSED_MDF_COLOR — hidden/reclaimed panels

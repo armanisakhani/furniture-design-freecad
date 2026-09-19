@@ -1,23 +1,32 @@
 """
 Same as tools/dump_scene.py, but for an already-combined order (see
 combine_order.py) instead of a single freshly-built furniture module —
-opens the saved orders/output/order.FCStd directly rather than calling a
-create_<name>() function, since a combined order isn't one furniture
-module's own doc. Feeds tools/render_scene.py for generate_report.py's
-render image.
+opens the saved order.FCStd directly rather than calling a create_<name>()
+function, since a combined order isn't one furniture module's own doc.
+Feeds tools/render_scene.py for generate_report.py's render image.
 
 Run with freecadcmd, after combine_order.py has produced order.FCStd:
-    freecadcmd orders/dump_order_scene.py
+    ORDER_NAME=default freecadcmd orders/dump_order_scene.py
 """
 
 import json
 import os
+import sys
+
+_ORDERS_DIR = os.path.dirname(os.path.abspath(__file__))
+if _ORDERS_DIR not in sys.path:
+    sys.path.insert(0, _ORDERS_DIR)
 
 import FreeCAD as App
 
-_ORDERS_DIR = os.path.dirname(os.path.abspath(__file__))
-FCSTD_PATH = os.path.join(_ORDERS_DIR, "output", "order.FCStd")
-OUTPUT_PATH = os.path.join(_ORDERS_DIR, "output", "order_scene.json")
+from registry import order_paths
+
+ORDER_NAME = os.environ.get("ORDER_NAME")
+if not ORDER_NAME:
+    raise SystemExit("Set ORDER_NAME to a name under orders/specs/ (e.g. ORDER_NAME=default)")
+PATHS = order_paths(ORDER_NAME)
+FCSTD_PATH = PATHS["fcstd"]
+OUTPUT_PATH = PATHS["scene_json"]
 
 
 def main():

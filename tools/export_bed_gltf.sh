@@ -7,7 +7,7 @@
 # Usage:
 #   ./export_bed_gltf.sh                  # export the existing output file
 #   ./export_bed_gltf.sh --rebuild         # regenerate from params.py first
-#   STYLE=2 ./export_bed_gltf.sh --rebuild # regenerate with a params.py style preset
+#   STYLE=inset-raised ./export_bed_gltf.sh --rebuild # regenerate with a named style preset (furniture/bed/styles.yaml)
 
 set -e
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"       # tools/

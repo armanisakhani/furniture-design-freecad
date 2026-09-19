@@ -49,28 +49,34 @@ TOE_KICK_HEIGHT short of it for a board to fill.
 
 import os
 
+import yaml
+
 import colors
 
 # --- Style presets ----------------------------------------------------
-# Mirrors furniture/bed/params.py's STYLES pattern: select with the STYLE
-# env var, e.g. `STYLE=2 make view-dresser`. Color is NOT one of these
-# knobs (same as furniture/bed) — it's fully independent of geometry
-# STYLE, driven entirely by colors.py's own MAIN_COLOR/SECOND_COLOR/
-# REUSED_MDF_COLOR + PART_ROLES, plus DRAWER_COLOR_PATTERN below (still a
-# STYLES knob, since which drawer gets which of the 2 colors IS a
-# geometry-adjacent layout choice). drawer_color_pattern can still be
-# overridden on top of the selected style with its own same-named env var
-# (DRAWER_COLOR_PATTERN), same as STYLE's own per-knob overrides.
-STYLES = {
-    1: dict(drawer_color_pattern="0111"),
-}
+# Mirrors furniture/bed/params.py's pattern: named presets loaded from
+# furniture/dresser/styles.yaml, selected with the STYLE env var, e.g.
+# `STYLE=standard make view-dresser` (an order item's own `style:` key,
+# see orders/specs/<name>.yaml, becomes this same STYLE env var). Color is
+# NOT one of these knobs (same as furniture/bed) — it's fully independent
+# of geometry STYLE, driven entirely by colors.py's own MAIN_COLOR/
+# SECOND_COLOR/REUSED_MDF_COLOR + PART_ROLES, plus DRAWER_COLOR_PATTERN
+# below (still a STYLES knob, since which drawer gets which of the 2
+# colors IS a geometry-adjacent layout choice). drawer_color_pattern can
+# still be overridden on top of the selected style with its own
+# same-named env var (DRAWER_COLOR_PATTERN), same as STYLE's own
+# per-knob overrides.
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "styles.yaml")) as _f:
+    STYLES = yaml.safe_load(_f)
+
+DEFAULT_STYLE = "standard"
 
 
 def _resolve_style():
-    style_id = int(os.environ.get("STYLE") or 1)
-    if style_id not in STYLES:
-        raise ValueError(f"Unknown STYLE={style_id}; known styles: {sorted(STYLES)}")
-    values = dict(STYLES[style_id])
+    style_name = os.environ.get("STYLE") or DEFAULT_STYLE
+    if style_name not in STYLES:
+        raise ValueError(f"Unknown STYLE={style_name!r}; known styles: {sorted(STYLES)}")
+    values = dict(STYLES[style_name])
     if os.environ.get("DRAWER_COLOR_PATTERN"):
         values["drawer_color_pattern"] = os.environ["DRAWER_COLOR_PATTERN"]
     return values

@@ -4,10 +4,10 @@
 # needed. Mirrors view_bed.sh.
 #
 # Usage:
-#   ./view_dresser.sh                      # just reopen the existing output file
-#   ./view_dresser.sh --rebuild             # regenerate from params.py first
-#   STYLE=2 ./view_dresser.sh --rebuild     # regenerate with a params.py style preset
-#   ./view_dresser.sh /path/to/other.FCStd  # open a different file
+#   ./view_dresser.sh                            # rebuild from params.py, then open (the default)
+#   DRAWER_COLOR_PATTERN=1000 ./view_dresser.sh   # rebuild with an overridden knob (furniture/dresser/example.yaml)
+#   ./view_dresser.sh --view-only                # skip rebuilding, just reopen the existing output file
+#   ./view_dresser.sh /path/to/other.FCStd        # open a different file (skips rebuilding too)
 
 set -e
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"       # tools/
@@ -17,10 +17,11 @@ FREECADCMD="/Applications/FreeCAD.app/Contents/Resources/bin/freecadcmd"
 FREECAD_BIN="/Applications/FreeCAD.app/Contents/MacOS/FreeCAD"
 FILE="$DRESSER_DIR/output/dresser_test.FCStd"
 
-if [ "$1" == "--rebuild" ]; then
+if [ "$1" == "--view-only" ]; then
+    shift
+elif [ -z "$1" ]; then
     echo "Rebuilding from params.py..."
     "$FREECADCMD" "$DRESSER_DIR/tests/dresser_test.py"
-    shift
 fi
 
 if [ -n "$1" ]; then

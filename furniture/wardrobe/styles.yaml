@@ -1,0 +1,18 @@
+# Named style presets — mirrors furniture/bed/styles.yaml's pattern.
+# Select with the STYLE env var (or an order item's own `style:` key, see
+# orders/specs/<name>.yaml). Loaded by furniture/wardrobe/params.py's
+# _resolve_style(). `color_pattern` is "<door digit>_<drawer pattern>",
+# e.g. "1_0111": the digit before "_" picks the doors' color (same
+# '1'=main/'0'=second convention as the drawer pattern after it, one
+# digit per drawer top to bottom). Color itself is NOT one of these
+# knobs — see colors.py. `layout` and `color_pattern` can each still be
+# overridden on their own on top of a selected style with their own
+# same-named keys (LAYOUT / COLOR_PATTERN env vars).
+
+two-piece:      # dresser-like bottom unit + a separate hanging unit stacked on top
+  layout: two_piece
+  color_pattern: "1_0111"
+
+one-piece:      # one continuous carcass spanning both the drawers and the hanging compartment
+  layout: one_piece
+  color_pattern: "0_1111"

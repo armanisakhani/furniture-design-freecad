@@ -1,0 +1,18 @@
+# Named order — see orders/registry.py's load_order() for the full schema.
+# `colors` (optional) applies to every item below via MAIN_COLOR/
+# SECOND_COLOR/REUSED_MDF_COLOR; defaults to misty/white/white when omitted
+# (see any furniture/<name>/colors.py). Every item key besides `furniture`,
+# `qty` and `gap_after` is passed straight through as that item's own env
+# var override (style, layout, color_pattern, box_color_by_position, ...) —
+# see each furniture/<name>/params.py for what it accepts.
+#
+# View: tools/order.sh default
+# Cutlist report: tools/order.sh default --report
+
+items:
+  - furniture: bed
+    qty: 1
+  - furniture: dresser
+    qty: 1
+  - furniture: wardrobe
+    qty: 1

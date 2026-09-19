@@ -5,7 +5,7 @@ both its .FCStd (for combine_order.py) and its panels.json (for
 cutlist.py) under output/items/ (see registry.py's item_paths). One entry
 per process — see registry.py's own docstring for why.
 
-Usage: FURNITURE=dresser INSTANCE_KEY=dresser-1 STYLE=2 freecadcmd orders/build_item.py
+Usage: FURNITURE=bed INSTANCE_KEY=bed-0 ORDER_NAME=default STYLE=inset-raised freecadcmd orders/build_item.py
 """
 
 import importlib
@@ -25,8 +25,9 @@ import FreeCAD as App
 
 NAME = os.environ.get("FURNITURE")
 INSTANCE_KEY = os.environ.get("INSTANCE_KEY")
-if NAME not in FURNITURE or not INSTANCE_KEY:
-    raise SystemExit(f"Set FURNITURE to one of {sorted(FURNITURE)} and INSTANCE_KEY")
+ORDER_NAME = os.environ.get("ORDER_NAME")
+if NAME not in FURNITURE or not INSTANCE_KEY or not ORDER_NAME:
+    raise SystemExit(f"Set FURNITURE to one of {sorted(FURNITURE)}, plus INSTANCE_KEY and ORDER_NAME")
 
 INFO = FURNITURE[NAME]
 if INFO["dir"] not in sys.path:
@@ -42,7 +43,7 @@ def main():
     panels = result[0] if isinstance(result, tuple) else result  # bed returns (panels, mattress)
     doc.recompute()
 
-    paths = item_paths(INSTANCE_KEY)
+    paths = item_paths(ORDER_NAME, INSTANCE_KEY)
     os.makedirs(os.path.dirname(paths["fcstd"]), exist_ok=True)
     doc.saveAs(paths["fcstd"])
 

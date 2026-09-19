@@ -1,3 +1,6 @@
 # Cut-list / sheet-nesting tooling (tools/cutlist.py) — not needed by the
 # FreeCAD model itself (that runs under freecadcmd's own bundled Python).
 rectpack==0.2.2
+
+# Named order specs (orders/specs/*.yaml) — orders/registry.py's load_order().
+PyYAML==6.0.3

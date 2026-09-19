@@ -8,7 +8,7 @@ plain-Python script) can consume it without needing freecadcmd/FreeCAD
 itself.
 
 Run with freecadcmd (see tools/dump_panels.sh):
-    STYLE=5 MAIN_COLOR=brown tools/dump_panels.sh
+    STYLE=overlay-over-box MAIN_COLOR=brown tools/dump_panels.sh
 """
 
 import json

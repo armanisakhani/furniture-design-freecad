@@ -1,10 +1,11 @@
 """
 Combines every order entry's already-built .FCStd (build_item.py, one per
 entry) into one "Order" document, laid out side by side along X with a
-gap. Reads the entry list from ORDER (same spec as registry.parse_order)
-to know each entry's own instance_key/qty/flip.
+gap. Reads the entry list from the ORDER_NAME named order (orders/specs/
+<name>.yaml, see registry.load_order) to know each entry's own
+instance_key/qty/flip.
 
-Usage: ORDER="bed:1,dresser:2:STYLE=2" freecadcmd orders/combine_order.py
+Usage: ORDER_NAME=default freecadcmd orders/combine_order.py
 """
 
 import os
@@ -18,25 +19,29 @@ for _p in (_ROOT, _ORDERS_DIR):
 
 import FreeCAD as App
 
-from registry import FURNITURE, parse_order, item_paths
+from registry import FURNITURE, load_order, order_paths, item_paths
 from core.verify import combined_bbox
 
-OUTPUT_FILE = os.path.join(_ORDERS_DIR, "output", "order.FCStd")
-GAP = 300  # mm between items, TBD — default; an entry's own "GAP" override
-           # (see registry.parse_order) replaces this for the space added
-           # after that entry's own copies, e.g. "dresser:1:GAP=0,wardrobe:1"
-           # butts the wardrobe flush against the dresser (0mm, touching).
+GAP = 300  # mm between items, TBD — default; an entry's own "gap_after"
+           # key (see registry.load_order) replaces this for the space
+           # added after that entry's own copies, e.g. a dresser item with
+           # gap_after: 0 butts the next item flush against it (touching).
 FLIP_ROTATION = App.Rotation(App.Vector(0, 0, 1), 180)
 
 
 def main():
-    entries = parse_order(os.environ.get("ORDER", "bed:1,dresser:1,wardrobe:1"))
+    order_name = os.environ.get("ORDER_NAME")
+    if not order_name:
+        raise SystemExit("Set ORDER_NAME to a name under orders/specs/ (e.g. ORDER_NAME=default)")
+    order = load_order(order_name)
+    entries = order["entries"]
+    output_file = order_paths(order_name)["fcstd"]
 
     combined_doc = App.newDocument("Order")
     x_offset = 0.0
 
     for entry in entries:
-        paths = item_paths(entry["instance_key"])
+        paths = item_paths(order_name, entry["instance_key"])
         if not os.path.exists(paths["fcstd"]):
             raise SystemExit(f"{paths['fcstd']} doesn't exist yet — run orders/run_order.py first.")
 
@@ -77,9 +82,9 @@ def main():
         App.closeDocument(source_doc.Name)
 
     combined_doc.recompute()
-    os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
-    combined_doc.saveAs(OUTPUT_FILE)
-    print(f"Created {OUTPUT_FILE}: {len(combined_doc.Objects)} objects")
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    combined_doc.saveAs(output_file)
+    print(f"Created {output_file}: {len(combined_doc.Objects)} objects")
 
 
 main()

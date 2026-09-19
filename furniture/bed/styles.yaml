@@ -1,0 +1,57 @@
+# Named drawer/frame style presets — bundles of knobs that vary together,
+# so switching variants is one name instead of hand-editing several
+# unrelated lines in sync. Select with the STYLE env var (or an order
+# item's own `style:` key, see orders/specs/<name>.yaml), e.g.
+# `STYLE=inset-raised make test-bed`. Loaded by furniture/bed/params.py's
+# _resolve_style() — add a new entry here for a new variant.
+#
+# Any single knob can still be overridden on top of the selected style
+# with its own same-named key (see furniture/bed/example.yaml for the
+# full list) — e.g. an order item with `style: inset` and
+# `has_leg_frame: true` together.
+#
+# Color is NOT one of these knobs — it's fully independent of geometry
+# style (any style pairs with any color), driven entirely by colors.py's
+# own MAIN_COLOR/SECOND_COLOR/REUSED_MDF_COLOR + PART_ROLES. See colors.py.
+
+inset:                             # baseline: push-to-open, mattress flush, no leg frame
+  drawer_style: inset
+  mattress_gap_width: 0
+  has_leg_frame: false
+  box_color_by_position: false
+
+inset-mattress-gap:                # inset, with a margin around the mattress on both sides
+  drawer_style: inset
+  mattress_gap_width: 100
+  has_leg_frame: false
+  box_color_by_position: false
+
+inset-raised:                      # inset, raised on a leg frame (visual only — inset never needs the hand clearance)
+  drawer_style: inset
+  mattress_gap_width: 0
+  has_leg_frame: true
+  box_color_by_position: false
+
+inset-mattress-gap-raised:         # inset + mattress margin + raised, all 3 together
+  drawer_style: inset
+  mattress_gap_width: 100
+  has_leg_frame: true
+  box_color_by_position: false
+
+overlay-over-box:                  # Model A: handle-less, opened by hand from underneath — needs the leg frame
+  drawer_style: overlay_over_box
+  mattress_gap_width: 0
+  has_leg_frame: true
+  box_color_by_position: false
+
+overlay-under-box-mattress-gap:    # Model A variant: rail-mount frame under the Top panel + mattress margin
+  drawer_style: overlay_under_box
+  mattress_gap_width: 100
+  has_leg_frame: true
+  box_color_by_position: false
+
+inset-two-tone:                    # inset, but every box is 1 solid color by position (middle vs. side) instead of 2-tone body/front
+  drawer_style: inset
+  mattress_gap_width: 0
+  has_leg_frame: false
+  box_color_by_position: true

@@ -4,21 +4,21 @@ fresh (same steps as tools/order.sh), renders it, and writes a single
 self-contained HTML report — full parts-list tables plus a real cutting-
 diagram SVG for EVERY sheet, both new-stock (colored) and reclaimed/white.
 
-Reports exactly the ONE build that ORDER describes (its own
+Reports exactly the ONE build that the named order describes (its own
 BOX_SHELL_ALL_NEW/STYLE/LAYOUT/etc. are already baked into each item's own
 panels.json) — no side-by-side "what if" scenario comparison, so the
 report always matches the render/photo of that same build. Registering a
-different configuration is a different ORDER run, producing its own
-report.html to compare by eye.
+different configuration means editing (or copying) that order's YAML file
+under orders/specs/ and running this again, producing its own report.html
+under orders/output/<name>/ to compare by eye.
 
 Plain Python (project's own .venv) — only the FreeCAD build/combine/scene-
 dump steps need freecadcmd; those run as subprocesses, same split as
 run_order.py.
 
 Usage:
-    ORDER="dresser:1,wardrobe:1:LAYOUT=two_piece" \\
-        .venv/bin/python orders/generate_report.py
-    -> orders/output/report.html (+ orders/output/order_render.png)
+    .venv/bin/python orders/generate_report.py <order name>
+    -> orders/output/<name>/report.html (+ order_render.png)
 """
 
 import base64
@@ -33,17 +33,13 @@ for _p in (_ROOT, os.path.join(_ROOT, "tools"), _ORDERS_DIR):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from registry import FURNITURE, parse_order
+from registry import FURNITURE, load_order, order_paths, require_item_built
 from order_cutlist import load_order_panels
 from report_labels import translate, FA_LABELS
 from svg_cutting import sheet_svg
 import cutlist as shared
 
 FREECADCMD = "/Applications/FreeCAD.app/Contents/Resources/bin/freecadcmd"
-OUTPUT_DIR = os.path.join(_ORDERS_DIR, "output")
-SCENE_JSON = os.path.join(OUTPUT_DIR, "order_scene.json")
-RENDER_PNG = os.path.join(OUTPUT_DIR, "order_render.png")
-REPORT_HTML = os.path.join(OUTPUT_DIR, "report.html")
 
 # Every new-stock color any furniture/ module's colors.py SWATCHES can
 # currently produce (misty/brown/white/glass — see each module's own
@@ -64,30 +60,38 @@ DEFAULT_STYLE = dict(css="reclaimed", fill="var(--reclaimed-soft)", stroke="var(
 RECLAIMED_STYLE = dict(css="reclaimed", fill="var(--reclaimed-soft)", stroke="var(--reclaimed)")
 
 
-def build_order(order_spec, entries):
-    for entry in entries:
+def build_order(order_name, order):
+    for entry in order["entries"]:
         print(
             f"Building {entry['instance_key']} ({entry['name']}, qty={entry['qty']}, "
             f"overrides={entry['overrides']})...", flush=True,
         )
-        env = dict(os.environ, FURNITURE=entry["name"], INSTANCE_KEY=entry["instance_key"], **entry["overrides"])
+        env = dict(
+            os.environ, **order["env"],
+            FURNITURE=entry["name"], INSTANCE_KEY=entry["instance_key"], ORDER_NAME=order_name,
+            **entry["overrides"],
+        )
         subprocess.run([FREECADCMD, os.path.join(_ORDERS_DIR, "build_item.py")], env=env, check=True)
+        require_item_built(order_name, entry)
 
     print("Combining into one order...", flush=True)
     subprocess.run(
         [FREECADCMD, os.path.join(_ORDERS_DIR, "combine_order.py")],
-        env=dict(os.environ, ORDER=order_spec), check=True,
+        env=dict(os.environ, ORDER_NAME=order_name), check=True,
     )
 
 
-def render_order():
+def render_order(order_name, paths):
     print("Rendering...", flush=True)
-    subprocess.run([FREECADCMD, os.path.join(_ORDERS_DIR, "dump_order_scene.py")], check=True)
     subprocess.run(
-        [sys.executable, os.path.join(_ROOT, "tools", "render_scene.py"), SCENE_JSON, RENDER_PNG],
+        [FREECADCMD, os.path.join(_ORDERS_DIR, "dump_order_scene.py")],
+        env=dict(os.environ, ORDER_NAME=order_name), check=True,
+    )
+    subprocess.run(
+        [sys.executable, os.path.join(_ROOT, "tools", "render_scene.py"), paths["scene_json"], paths["render_png"]],
         check=True,
     )
-    with open(RENDER_PNG, "rb") as f:
+    with open(paths["render_png"], "rb") as f:
         return base64.b64encode(f.read()).decode("ascii")
 
 
@@ -309,7 +313,7 @@ footer code { font-family: "JetBrains Mono", monospace; background: var(--reclai
 """
 
 
-def render_html(order_spec, entries, panels, render_b64, new_groups, reclaimed):
+def render_html(order_name, fcstd_path, entries, panels, render_b64, new_groups, reclaimed):
     item_summary = "، ".join(f'{FURNITURE[e["name"]]["label"]} × {e["qty"]}' for e in entries)
     new_tiles, new_tables, new_diagrams = new_stock_section(new_groups)
     rec_tiles, rec_tables, rec_diagrams, rec_oversized = reclaimed_section(reclaimed)
@@ -325,7 +329,7 @@ def render_html(order_spec, entries, panels, render_b64, new_groups, reclaimed):
 <style>{PAGE_CSS}</style></head><body>
 <div class="page">
   <header>
-    <div class="eyebrow">ORDER · {order_spec}</div>
+    <div class="eyebrow">ORDER · {order_name}</div>
     <h1>گزارش برش و لیست قطعات — {item_summary}</h1>
     <p class="lede">
       {len(panels)} قطعه‌ی روی ورق ({total_new} از ورق نو، {total_reclaimed} از اسکرپ/ورق سفید بازیافتی) —
@@ -336,7 +340,7 @@ def render_html(order_spec, entries, panels, render_b64, new_groups, reclaimed):
 
   <div class="render-wrap">
     <img src="data:image/png;base64,{render_b64}" alt="رندر مستقیم از مدل واقعی FreeCAD همین سفارش" />
-    <p class="render-caption">رندر مستقیم از <code class="mono">orders/output/order.FCStd</code> همین سفارش — نه یک طرح دستی.</p>
+    <p class="render-caption">رندر مستقیم از <code class="mono">{fcstd_path}</code> همین سفارش — نه یک طرح دستی.</p>
   </div>
 
   <section>
@@ -383,7 +387,7 @@ def render_html(order_spec, entries, panels, render_b64, new_groups, reclaimed):
   </section>
 
   <footer>
-    سفارش: <code>{order_spec}</code> · تولید خودکار در {now} ·
+    سفارش: <code>{order_name}</code> · تولید خودکار در {now} ·
     <code>orders/generate_report.py</code>
   </footer>
 </div>
@@ -392,21 +396,26 @@ def render_html(order_spec, entries, panels, render_b64, new_groups, reclaimed):
 
 
 def main():
-    order_spec = os.environ.get("ORDER", "bed:1,dresser:1,wardrobe:1")
-    entries = parse_order(order_spec)
+    if len(sys.argv) != 2:
+        raise SystemExit(f"Usage: {sys.argv[0]} <order name>  (a file under orders/specs/)")
+    order_name = sys.argv[1]
+    order = load_order(order_name)
+    entries = order["entries"]
+    paths = order_paths(order_name)
 
-    build_order(order_spec, entries)
-    render_b64 = render_order()
+    build_order(order_name, order)
+    render_b64 = render_order(order_name, paths)
 
-    panels = load_order_panels(entries)
+    panels = load_order_panels(order_name, entries)
     new_groups = shared.group_new_stock(panels)
     reclaimed = shared.group_reclaimed(panels)
 
-    html = render_html(order_spec, entries, panels, render_b64, new_groups, reclaimed)
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    with open(REPORT_HTML, "w") as f:
+    fcstd_rel = os.path.relpath(paths["fcstd"], _ROOT)
+    html = render_html(order_name, fcstd_rel, entries, panels, render_b64, new_groups, reclaimed)
+    os.makedirs(paths["dir"], exist_ok=True)
+    with open(paths["report_html"], "w") as f:
         f.write(html)
-    print(f"\nWrote {REPORT_HTML} ({len(panels)} panels)")
+    print(f"\nWrote {paths['report_html']} ({len(panels)} panels)")
 
     if STALE_LOOKUPS:
         print(

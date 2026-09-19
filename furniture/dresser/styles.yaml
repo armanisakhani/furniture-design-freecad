@@ -1,0 +1,12 @@
+# Named style presets — mirrors furniture/bed/styles.yaml's pattern.
+# Select with the STYLE env var (or an order item's own `style:` key, see
+# orders/specs/<name>.yaml). Loaded by furniture/dresser/params.py's
+# _resolve_style(). Color is NOT one of these knobs — see colors.py.
+#
+# Only "standard" exists today (this dresser has no other geometry
+# variant yet) — drawer_color_pattern can still be overridden on its own
+# on top of it with its own same-named key, e.g. an order item with
+# `style: standard` and `drawer_color_pattern: "1000"` together.
+
+standard:
+  drawer_color_pattern: "0111"

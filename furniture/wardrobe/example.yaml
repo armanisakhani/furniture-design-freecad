@@ -1,0 +1,20 @@
+# Every parameter furniture/wardrobe/params.py accepts as an order-item
+# override, each shown at its own default value — see
+# orders/specs/<name>.yaml's `items:` list for where these keys go.
+# Documentation only: nothing reads this file, copy whichever keys you
+# actually need into a real order item.
+
+furniture: wardrobe
+qty: 1
+gap_after: 300              # mm gap AFTER this item's own copies, before the next item (orders/registry.py)
+
+style: two-piece             # see furniture/wardrobe/styles.yaml
+layout: two_piece            # one_piece | two_piece — overrides the style's own layout
+color_pattern: "1_0111"      # "<door digit>_<drawer pattern>" — overrides the style's own pattern
+door_swatch: null            # e.g. "anthracite" — an independent door color, not just main/second (any furniture/wardrobe/colors.py SWATCHES name)
+
+# Order-wide, not per-item — set once at the top of the order's own YAML:
+#   colors:
+#     main: misty      # MAIN_COLOR — body (see furniture/wardrobe/colors.py's PART_ROLES)
+#     second: white     # SECOND_COLOR — the color_pattern's '0' digits
+#     reused: white     # REUSED_MDF_COLOR — hidden/reclaimed panels

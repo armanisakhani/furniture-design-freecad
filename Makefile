@@ -3,8 +3,9 @@ FREECADCMD := /Applications/FreeCAD.app/Contents/Resources/bin/freecadcmd
 # Add a `test-<name>`/`view-<name>` pair here for each new furniture/<name>/
 # design, following the same shape as the bed targets below.
 #
-# STYLE=N selects a params.py style preset (see furniture/bed/params.py's
-# STYLES dict), e.g. `make test-bed STYLE=2`. Make auto-exports command-line
+# STYLE=<name> selects a named style preset (see furniture/<name>/styles.yaml
+# and its own example.yaml for every overridable knob), e.g.
+# `make test-bed STYLE=inset-raised`. Make auto-exports command-line
 # variables to recipe shells, so no extra plumbing is needed here.
 
 .PHONY: test-bed view-bed export-bed cutlist-bed
@@ -16,8 +17,8 @@ test-bed:
 	$(FREECADCMD) furniture/bed/tests/bed_test.py
 
 view-bed:
-ifdef REBUILD
-	tools/view_bed.sh --rebuild
+ifdef VIEW_ONLY
+	tools/view_bed.sh --view-only
 else
 	tools/view_bed.sh
 endif
@@ -47,8 +48,8 @@ test-dresser:
 	$(FREECADCMD) furniture/dresser/tests/dresser_test.py
 
 view-dresser:
-ifdef REBUILD
-	tools/view_dresser.sh --rebuild
+ifdef VIEW_ONLY
+	tools/view_dresser.sh --view-only
 else
 	tools/view_dresser.sh
 endif
@@ -66,8 +67,8 @@ test-wardrobe:
 	$(FREECADCMD) furniture/wardrobe/tests/wardrobe_test.py
 
 view-wardrobe:
-ifdef REBUILD
-	tools/view_wardrobe.sh --rebuild
+ifdef VIEW_ONLY
+	tools/view_wardrobe.sh --view-only
 else
 	tools/view_wardrobe.sh
 endif
@@ -79,10 +80,42 @@ else
 	tools/export_wardrobe_gltf.sh
 endif
 
-# Combines 1+ furniture items into one order (see orders/registry.py's
-# ORDER spec, e.g. `ORDER="dresser:2:STYLE=2,wardrobe:1:LAYOUT=two_piece"
-# make order`), reports the combined cut list, and opens it in FreeCAD.
+# Combines 1+ furniture items into one order (see orders/specs/<name>.yaml
+# and orders/registry.py's load_order), reports the combined cut list, and
+# opens it in FreeCAD — e.g. `make order misty_pearl` or `make order
+# NAME=misty_pearl` (either form works; defaults to orders/specs/
+# default.yaml). Optional mode, same 3 choices as tools/order.sh's own:
+# `make order misty_pearl report` (or `REPORT=1`) builds + opens the full
+# HTML cutlist report instead of FreeCAD; `... view-only` (or
+# `VIEW_ONLY=1`) skips (re)building, just reopens the existing
+# order.FCStd; `... no-view` (or `NO_VIEW=1`) builds + reports the cut
+# list without opening anything. Plain double-dash flags like `--report`
+# do NOT work here — `make` itself grabs anything starting with `-`/`--`
+# as its own command-line option before this Makefile ever runs, and
+# rejects one it doesn't recognize, regardless of what this file defines
+# (that's a `make` limitation, not something a Makefile can override); use
+# the bare word (`report`) or the `REPORT=1` form instead. `--report` (and
+# `--view-only`/`--no-view`) DO work when calling tools/order.sh directly,
+# since a shell script parses its own arguments however it likes.
+# There is no separate "--rebuild" flag anywhere in this project anymore —
+# every order/view command rebuilds by default; view-only (or
+# tools/*.sh's own --view-only) is the opt-OUT.
 .PHONY: order
 
+# A bare word after `order` on the command line (e.g. `make order
+# misty_pearl` or `make order misty_pearl report`) is picked up here as
+# the order's name/mode — NAME=/REPORT=1/VIEW_ONLY=1/NO_VIEW=1 each still
+# win over their bare-word equivalent if both are given. This relies on
+# the catch-all %: rule at the bottom of this file to keep make from
+# treating a bare word as an unknown target and erroring; the tradeoff is
+# that a genuine typo'd target anywhere in this Makefile now silently
+# does nothing instead of erroring, acceptable at this project's size.
+_ORDER_GOALS := $(filter-out order,$(MAKECMDGOALS))
+ORDER_MODE_ARG := $(filter report view-only no-view,$(_ORDER_GOALS))
+ORDER_NAME_ARG := $(word 1,$(filter-out report view-only no-view,$(_ORDER_GOALS)))
+
 order:
-	tools/order.sh
+	tools/order.sh $(or $(NAME),$(ORDER_NAME_ARG)) $(if $(REPORT),--report,$(if $(VIEW_ONLY),--view-only,$(if $(NO_VIEW),--no-view,$(if $(ORDER_MODE_ARG),--$(ORDER_MODE_ARG),))))
+
+%:
+	@:
