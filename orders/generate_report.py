@@ -55,6 +55,9 @@ COLOR_STYLE = {
     # near-white — this is new-stock white (box body/drawer front/door),
     # a different section of the report than reclaimed/hidden panels.
     (1.0, 1.0, 1.0): dict(css="white", fill="var(--white-soft)", stroke="var(--white)"),
+    (0.59, 0.52, 0.48): dict(css="cuppuccino", fill="var(--cuppuccino-soft)", stroke="var(--cuppuccino)"),
+    (0.97, 0.97, 0.96): dict(css="pearl", fill="var(--pearl-soft)", stroke="var(--pearl)"),
+    (0.79, 0.78, 0.79): dict(css="shale-gray", fill="var(--shale-gray-soft)", stroke="var(--shale-gray)"),
 }
 DEFAULT_STYLE = dict(css="reclaimed", fill="var(--reclaimed-soft)", stroke="var(--reclaimed)")
 RECLAIMED_STYLE = dict(css="reclaimed", fill="var(--reclaimed-soft)", stroke="var(--reclaimed)")
@@ -95,13 +98,14 @@ def render_order(order_name, paths):
         return base64.b64encode(f.read()).decode("ascii")
 
 
-def rank_sheet_sizes(rows):
-    """Every candidate size in SHEET_SIZES, ranked by utilization (least
-    wasted material first) — the project's own standing rule for which
-    sheet size to recommend, applied generically instead of hardcoding
-    which size goes with which color."""
+def rank_sheet_sizes(rows, color):
+    """Every applicable candidate size (shared.applicable_sheet_sizes —
+    excludes "small" for MAIN_COLOR, not a real purchasing option for it),
+    ranked by utilization (least wasted material first) — the project's
+    own standing rule for which sheet size to recommend, applied
+    generically instead of hardcoding which size goes with which color."""
     candidates = []
-    for sheet_name, (sw, sh) in shared.SHEET_SIZES.items():
+    for sheet_name, (sw, sh) in shared.applicable_sheet_sizes(color).items():
         n, placements = shared.pack_onto(rows, sw, sh)
         util = shared.utilization(rows, n, sw, sh)
         candidates.append(dict(sheet_name=sheet_name, sw=sw, sh=sh, n=n, util=util, placements=placements))
@@ -161,7 +165,7 @@ def new_stock_section(new_groups):
         if color not in COLOR_STYLE:
             STALE_LOOKUPS.append(f"color {color}: no COLOR_STYLE/COLOR_NAMES match -> generic style, shown as {name!r}")
         total_qty = sum(r["qty"] for r in rows.values())
-        ranked = rank_sheet_sizes(rows)
+        ranked = rank_sheet_sizes(rows, color)
         best = ranked[0]
 
         alt_lines = [
@@ -235,6 +239,9 @@ img{max-width:100%}
   --reclaimed: #a89c85; --reclaimed-soft: #eee8dc;
   --glass: #6b8f9e; --glass-soft: #e9f1f3;
   --white: #8a8f96; --white-soft: #eef0f2;
+  --cuppuccino: #96857a; --cuppuccino-soft: #efe9e6;
+  --pearl: #b8b6ae; --pearl-soft: #f9f9f7;
+  --shale-gray: #8f8d8f; --shale-gray-soft: #eeecee;
   --sheet-bg: #fbf8f1; --sheet-waste: #eee7d6;
   --warn: #a3542f; --warn-soft: #f5e4d7;
 }
@@ -247,6 +254,9 @@ img{max-width:100%}
     --reclaimed: #b9ac8f; --reclaimed-soft: #2c2718;
     --glass: #9fc4d3; --glass-soft: #202b2e;
     --white: #c7ccd1; --white-soft: #2a2d31;
+    --cuppuccino: #c9b6ac; --cuppuccino-soft: #362e2a;
+    --pearl: #d8d8d6; --pearl-soft: #2c2c2a;
+    --shale-gray: #b8b6b8; --shale-gray-soft: #302f30;
     --sheet-bg: #221e16; --sheet-waste: #2a2519;
     --warn: #d38e64; --warn-soft: #362317;
   }
@@ -259,6 +269,9 @@ img{max-width:100%}
   --reclaimed: #b9ac8f; --reclaimed-soft: #2c2718;
   --glass: #9fc4d3; --glass-soft: #202b2e;
   --white: #c7ccd1; --white-soft: #2a2d31;
+  --cuppuccino: #c9b6ac; --cuppuccino-soft: #362e2a;
+  --pearl: #d8d8d6; --pearl-soft: #2c2c2a;
+  --shale-gray: #b8b6b8; --shale-gray-soft: #302f30;
   --sheet-bg: #221e16; --sheet-waste: #2a2519;
   --warn: #d38e64; --warn-soft: #362317;
 }

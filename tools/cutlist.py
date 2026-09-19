@@ -28,14 +28,21 @@ Usage (see `make cutlist-bed`, which does exactly this):
 
 import json
 import os
+import sys
 from collections import defaultdict
 
 from rectpack import newPacker, SORT_AREA, MaxRectsBssf
 
-_OUTPUT_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "furniture", "bed", "output",
-)
+_ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_BED_DIR = os.path.join(_ROOT_DIR, "furniture", "bed")
+_OUTPUT_DIR = os.path.join(_BED_DIR, "output")
+
+# MAIN_COLOR resolves identically (same env var, same swatch names) in
+# every furniture/<name>/colors.py — importing bed's is just a convenient,
+# already-on-disk way to read it here without duplicating the swatch table.
+if _BED_DIR not in sys.path:
+    sys.path.insert(0, _BED_DIR)
+import colors as _bed_colors
 
 # Always compared side by side (see module docstring) — not just the
 # current PANELS_OUTPUT single-file default, kept only as an escape hatch
@@ -51,6 +58,14 @@ SHEET_SIZES = {
     "large (1830x3660)": (1830, 3660),
     "small (1830x2440)": (1830, 2440),
 }
+
+# MAIN_COLOR (colors.py's "main" role, e.g. misty) is only actually stocked
+# as large (1830x3660) sheets at the workshop — small (1830x2440) isn't a
+# real purchasing option for it, confirmed by the user, so it's never
+# offered as a candidate for that one color specifically (every other
+# new-stock color still compares both sizes normally). Rounded the same
+# way group_new_stock's own dict keys are, so a direct dict lookup matches.
+MAIN_COLOR_RGB = tuple(round(c, 2) for c in _bed_colors.MAIN_COLOR)
 
 # Not measured yet (workshop unknown) — reasonable defaults per the user's
 # own call ("خودت یک چیز منطقی بذار"). Revisit once the actual saw/workshop
@@ -69,11 +84,25 @@ COLOR_NAMES = {
     (0.43, 0.35, 0.28): "قهوه‌ای (Brown)",
     (0.78, 0.83, 0.85): "شیشه‌ی آینه (Mirror Glass)",
     (1.0, 1.0, 1.0): "سفید (White)",
+    (0.59, 0.52, 0.48): "کاپوچینو (Cuppuccino)",
+    (0.97, 0.97, 0.96): "مروارید (Pearl)",
+    (0.79, 0.78, 0.79): "خاکستری سنگی (Shale Gray)",
 }
 
 
 def round_color(c):
     return tuple(round(v, 2) for v in c)
+
+
+def applicable_sheet_sizes(color):
+    """Every SHEET_SIZES candidate normally compared for a new-stock color
+    group, except MAIN_COLOR (see MAIN_COLOR_RGB above), which only ever
+    gets the large size — the workshop doesn't actually stock it as
+    small sheets, so offering that as a candidate would recommend
+    something not really purchasable."""
+    if round_color(color) == MAIN_COLOR_RGB:
+        return {name: size for name, size in SHEET_SIZES.items() if name.startswith("large")}
+    return SHEET_SIZES
 
 
 def load_panels(path):
@@ -226,7 +255,7 @@ def report_scenario(scenario_name, path):
                   f"({row['labels'][0]}{' ...' if row['qty'] > 1 else ''})")
 
         print(f"  kerf={KERF}mm, edge trim={TRIM_MARGIN}mm/side, free rotation (solid color)")
-        for sheet_name, (sw, sh) in SHEET_SIZES.items():
+        for sheet_name, (sw, sh) in applicable_sheet_sizes(color).items():
             n, _ = pack_onto(rows, sw, sh)
             util = utilization(rows, n, sw, sh)
             print(f"    if buying ONLY {sheet_name}: {n} sheet(s)  (~{util:.0f}% material used)")

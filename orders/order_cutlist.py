@@ -68,7 +68,7 @@ def main():
             print(f"  {length:>7.1f} x {width:>7.1f} x {thickness:>2.0f}mm  qty={row['qty']:<3} "
                   f"({row['labels'][0]}{' ...' if row['qty'] > 1 else ''})")
         print(f"  kerf={shared.KERF}mm, edge trim={shared.TRIM_MARGIN}mm/side, free rotation (solid color)")
-        for sheet_name, (sw, sh) in shared.SHEET_SIZES.items():
+        for sheet_name, (sw, sh) in shared.applicable_sheet_sizes(color).items():
             n, _ = shared.pack_onto(rows, sw, sh)
             util = shared.utilization(rows, n, sw, sh)
             print(f"    if buying ONLY {sheet_name}: {n} sheet(s)  (~{util:.0f}% material used)")
