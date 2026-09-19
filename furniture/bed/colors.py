@@ -52,21 +52,30 @@ def role_rgb(role):
 
 
 # --- Which part uses which role -------------------------------------------
-# The user's own part/color breakdown: box_top (box.py's Top panel — the
-# box's own flat MDF body) and drawer_face (the Face/نما) are "second"
-# (white). box_edge_band is its own, independent role, always "main"
-# (misty) — real PVC edge-banding tape glued around the box's cut edges
-# (box.py models this as actual thin frame geometry around Top's own
-# perimeter, not just a color label on Bottom/the 2 side walls, which
-# stay hidden/color-label-only since they're never actually visible).
+# The user's own part/color breakdown — 3 independent attributes, not 2:
+#   * box_top ("reused"): box.py's Top panel — the box's own flat MDF
+#     body. Follows REUSED_MDF_COLOR, same as the hidden/reclaimed
+#     structural material.
+#   * box_body ("reused"): Bottom + the 2 side walls' own MDF core —
+#     same idea as box_top (they're the same MDF batch as the rest of the
+#     shell), kept as its own role so it can be changed independently of
+#     box_top later if the 2 ever need to differ.
+#   * box_edge_band ("main"): the PVC edge-banding tape itself, glued
+#     around the box's cut edges — box.py models this as actual thin
+#     frame geometry around Top's own perimeter (real geometry, not a
+#     color label), and reuses the same role as a color label on Bottom/
+#     the 2 side walls (no real geometry there — they're never actually
+#     visible, visible=False). This is genuinely independent from
+#     box_top/box_body: changing the PVC trim color must NOT change
+#     either panel's own MDF color, and vice versa — that was the bug
+#     that prompted splitting this role out (box_edge_band used to double
+#     as both the trim color AND the sides' body color).
 # headboard/end_face_foot/mattress_stop (bed.py) are also "main" — the
-# crown/trim group PVC banding matches. The key point, per the user: a
-# board's face color and its edge-band color are 2 independent
-# attributes of the SAME board, not a body-vs-edge choice — box_top can
-# change without ever touching box_edge_band, and vice versa. Edit here
-# to move a part to a different role — nothing else needs to change.
+# crown/trim group PVC banding matches. Edit here to move a part to a
+# different role — nothing else needs to change.
 PART_ROLES = {
-    "box_top": "second",
+    "box_top": "reused",
+    "box_body": "reused",
     "box_edge_band": "main",
     "drawer_face": "second",
     "headboard": "main",

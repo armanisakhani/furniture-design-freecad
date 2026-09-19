@@ -110,10 +110,12 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
     if params.BOX_COLOR_BY_POSITION:
         box_color = colors.MIDDLE_BOX_COLOR if is_middle_box else colors.SIDE_BOX_COLOR
         top_color = box_color
+        body_color = box_color
         edge_band_color = box_color
         drawer_front_color = box_color
     else:
         top_color = colors.part_rgb("box_top")
+        body_color = colors.part_rgb("box_body")
         edge_band_color = colors.part_rgb("box_edge_band")
         drawer_front_color = colors.part_rgb("drawer_face")
 
@@ -141,13 +143,12 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
     # --- Box shell ----------------------------------------------------
     # Bottom: X-footprint BOX_WIDTH, inset by t from FRAME_WIDTH (see module
     # docstring). Top's footprint (BOX_TOP_PANEL_WIDTH/BOX_TOP_X_MIN)
-    # instead varies by DRAWER_STYLE — see params.py. Top is its own role
-    # ("box_top", colors.py) — the box's flat body. Bottom + the 2 side
-    # walls are a separate role ("box_edge_band") — the PVC banding around
-    # the box's own perimeter, per the user: distinct from the box's white
-    # body even though every one of these panels ends up mostly hidden
-    # once assembled (bed.py) — this is about what a viewer would see if
-    # they could see it, not just what's actually exposed.
+    # instead varies by DRAWER_STYLE — see params.py. Top has its own role
+    # ("box_top", colors.py); Bottom + the 2 side walls share a separate
+    # role ("box_body") — both "reused" by default (same MDF batch as the
+    # rest of the shell), but independently changeable. Neither is the PVC
+    # trim color (edge_band_color, below) — that's a 3rd, independent
+    # attribute (colors.py's PART_ROLES docstring has the full breakdown).
     shell_panel_width = params.BOX_SHELL_PANEL_WIDTH
     shell_panel_x_min = params.BOX_SHELL_PANEL_X_MIN
     # BOX_SHELL_ALL_NEW (params.py): a cost/logistics toggle, independent of
@@ -158,7 +159,7 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
     add_panel(
         "Bottom", "Bottom Panel", shell_panel_width, box_length, t,
         _IDENTITY, App.Vector(shell_panel_x_min, y_offset, 0),
-        color=edge_band_color, visible=False, stock_source=shell_stock_source,
+        color=body_color, visible=False, stock_source=shell_stock_source,
     )
     add_panel(
         "Top", "Top Panel", params.BOX_TOP_PANEL_WIDTH, box_length, t,
@@ -217,12 +218,12 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
     add_panel(
         "SideWallNear", "Side Wall (Y near)", shell_panel_width, interior_height, t,
         _ROT_X90, App.Vector(shell_panel_x_min, y_offset, t),
-        color=edge_band_color, visible=False, stock_source=shell_stock_source,
+        color=body_color, visible=False, stock_source=shell_stock_source,
     )
     add_panel(
         "SideWallFar", "Side Wall (Y far)", shell_panel_width, interior_height, t,
         _ROT_X90, App.Vector(shell_panel_x_min, y_offset + box_length - t, t),
-        color=edge_band_color, visible=False, stock_source=shell_stock_source,
+        color=body_color, visible=False, stock_source=shell_stock_source,
     )
 
     # --- Drawer_box carcasses ------------------------------------------
