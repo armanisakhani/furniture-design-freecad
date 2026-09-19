@@ -12,7 +12,8 @@
 
 left: main         # Left/BottomLeft/HangingLeft side panels (wardrobe.py), both layouts
 right: main        # Right/BottomRight/HangingRight side panels
-top: main          # Top/HangingTop/Divider — the truly visible, new-stock ceiling/divider panels
+top: main          # Top (one_piece)/Divider — the truly visible, new-stock ceiling/divider panels
+hanging_top: main  # Hanging Unit - Top Panel (two_piece) — own role, own cut-edge always "main" (see below)
 bottom: reused     # Bottom Panel — hidden base, cut from reclaimed stock by default
 back: reused       # Back/BottomBack/HangingBack — hidden, assumed against a wall, both layouts
 
@@ -31,3 +32,9 @@ back: reused       # Back/BottomBack/HangingBack — hidden, assumed against a w
 # independently of the body/PanelColor these 2 roles govern.
 bottom_top: reused       # Bottom Unit - Top Panel's own hidden body
 hanging_bottom: reused   # Hanging Unit - Bottom's own hidden body
+
+# hanging_top (above) is genuinely visible (unlike bottom_top/
+# hanging_bottom), so it's always new stock regardless of its own role —
+# but its own cut-edge perimeter STILL always matches "main" regardless
+# of whatever hanging_top itself is set to, same EdgeColor idea as
+# BottomTop/HangingBottom, per the user's own request.

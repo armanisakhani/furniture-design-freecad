@@ -40,6 +40,12 @@ back_swatch: null
 bottom_top_swatch: null
 hanging_bottom_swatch: null
 
+# hanging_top (two_piece only): the wardrobe's own visible ceiling —
+# own independent body color (still always new stock, unlike bottom_top/
+# hanging_bottom); its own exposed cut-edge always matches "main"
+# regardless, same hardcoded idea as bottom_top/hanging_bottom above.
+hanging_top_swatch: null
+
 # Order-wide, not per-item — set once at the top of the order's own YAML:
 #   colors:
 #     main: misty      # MAIN_COLOR — see furniture/wardrobe/part_roles.yaml for which parts default to it
