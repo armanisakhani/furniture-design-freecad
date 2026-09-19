@@ -74,7 +74,7 @@ def main():
             print(f"    if buying ONLY {sheet_name}: {n} sheet(s)  (~{util:.0f}% material used)")
 
     print("\n" + "=" * 70)
-    print(f"RECLAIMED / WHITE — نستینگ روی ورق سفید {shared.WHITE_SHEET_SIZE[0]}x{shared.WHITE_SHEET_SIZE[1]}mm (کل سفارش)")
+    print(f"PLAIN WHITE STOCK (also needs purchasing) — نستینگ روی ورق سفید ساده {shared.WHITE_SHEET_SIZE[0]}x{shared.WHITE_SHEET_SIZE[1]}mm (کل سفارش)")
     print("=" * 70)
     total_reclaimed = sum(r["qty"] for rows in reclaimed.values() for r in rows.values())
     print(f"({total_reclaimed} panel total)\n")

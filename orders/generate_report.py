@@ -348,7 +348,7 @@ def render_html(order_name, fcstd_path, entries, panels, render_b64, new_groups,
     <div class="eyebrow">ORDER · {order_name}</div>
     <h1>گزارش برش و لیست قطعات — {item_summary}</h1>
     <p class="lede">
-      {len(panels)} قطعه‌ی روی ورق ({total_new} از ورق نو، {total_reclaimed} از اسکرپ/ورق سفید بازیافتی) —
+      {len(panels)} قطعه‌ی روی ورق ({total_new} روی ورق رنگی، {total_reclaimed} روی ورق سفید ساده — هر دو باید خریداری شوند، این گزارش ضایعات/باقیمانده‌ی واقعی شما را حساب نمی‌کند) —
       دقیقاً همین سفارش، همین‌طور که ثبت و ساخته شده؛ بدون مقایسه‌ی حالت‌های دیگر.
       برای پیکربندی دیگر، همین سفارش را با تنظیمات دیگر دوباره ثبت و اجرا کنید.
     </p>
@@ -360,30 +360,30 @@ def render_html(order_name, fcstd_path, entries, panels, render_b64, new_groups,
   </div>
 
   <section>
-    <h2>خلاصه‌ی خرید ورق نو</h2>
+    <h2>خلاصه‌ی خرید ورق رنگی</h2>
     <p class="section-note">اندازه‌ی پیشنهادی هر رنگ، اندازه‌ای‌ست با کمترین دورریز (نه لزوماً کمترین تعداد ورق).</p>
     <div class="summary">{new_tiles}</div>
   </section>
 
   <section>
-    <h2>خلاصه‌ی ورق سفید / بازیافتی ({shared.WHITE_SHEET_SIZE[0]}×{shared.WHITE_SHEET_SIZE[1]}mm)</h2>
-    <p class="section-note">قطعات پنهان بدنه — کف، دیواره‌ی داخلی کشو، پشت‌ها؛ به تفکیک جنس (چون دو جنس روی یک ورق نمی‌شینند).</p>
+    <h2>خلاصه‌ی خرید ورق سفید ساده ({shared.WHITE_SHEET_SIZE[0]}×{shared.WHITE_SHEET_SIZE[1]}mm)</h2>
+    <p class="section-note">قطعات پنهان بدنه — کف، دیواره‌ی داخلی کشو، پشت‌ها؛ به تفکیک جنس (چون دو جنس روی یک ورق نمی‌شینند). این‌ها هم باید خریداری شوند؛ این گزارش ضایعات/باقیمانده‌ی واقعی انبار شما را حساب نمی‌کند.</p>
     <div class="summary">{rec_tiles}</div>
     {rec_oversized}
   </section>
 
   <section>
-    <h2>لیست قطعات — ورق نو</h2>
+    <h2>لیست قطعات — ورق رنگی</h2>
     {new_tables}
   </section>
 
   <section>
-    <h2>لیست قطعات — ورق سفید / بازیافتی</h2>
+    <h2>لیست قطعات — ورق سفید ساده</h2>
     {rec_tables}
   </section>
 
   <section>
-    <h2>نقشه‌ی برش — ورق نو</h2>
+    <h2>نقشه‌ی برش — ورق رنگی</h2>
     <div class="legend">
       <span class="mono">کِرف اره: {shared.KERF}mm</span>
       <span><span class="mono">حاشیه لبه: {shared.TRIM_MARGIN}mm</span> هر طرف</span>
@@ -393,7 +393,7 @@ def render_html(order_name, fcstd_path, entries, panels, render_b64, new_groups,
   </section>
 
   <section>
-    <h2>نقشه‌ی برش — ورق سفید / بازیافتی</h2>
+    <h2>نقشه‌ی برش — ورق سفید ساده</h2>
     <div class="legend">
       <span class="mono">کِرف اره: {shared.KERF}mm</span>
       <span><span class="mono">حاشیه لبه: {shared.TRIM_MARGIN}mm</span> هر طرف</span>

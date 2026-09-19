@@ -266,7 +266,7 @@ def report_scenario(scenario_name, path):
             print(f"    if buying ONLY {sheet_name}: {n} sheet(s)  (~{util:.0f}% material used)")
 
     print("\n" + "=" * 70)
-    print(f"RECLAIMED / WHITE — نستینگ روی ورق سفید {WHITE_SHEET_SIZE[0]}x{WHITE_SHEET_SIZE[1]}mm")
+    print(f"PLAIN WHITE STOCK (also needs purchasing) — نستینگ روی ورق سفید ساده {WHITE_SHEET_SIZE[0]}x{WHITE_SHEET_SIZE[1]}mm")
     print("=" * 70)
     total_reclaimed = sum(r["qty"] for rows in reclaimed.values() for r in rows.values())
     print(f"({total_reclaimed} panel total)\n")
