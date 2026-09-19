@@ -27,13 +27,17 @@ def _make_add_panel(doc, panels):
     def add_panel(obj_name, label, length, width_, thickness, rotation,
                   target_min, material="MDF", color=None,
                   visible=True, stock_source="new"):
+        # Every call below that isn't reclaimed/hidden passes its own
+        # explicit color (colors.py's part_override_rgb, per
+        # part_roles.yaml) — new_color here is just a safety-net default,
+        # not expected to actually be used.
         obj = create_assembly_panel(
             doc, obj_name, label,
             length, width_, thickness, rotation, target_min,
             material=material, color=color, visible=visible,
             stock_source=stock_source,
             reclaimed_color=colors.REUSED_COLOR,
-            new_color=colors.part_rgb("body"),
+            new_color=colors.REUSED_COLOR,
         )
         panels.append(obj)
         return obj
@@ -54,22 +58,22 @@ def _create_one_piece(doc):
     add_panel(
         "Bottom", "Bottom Panel", width, depth, t,
         IDENTITY, App.Vector(0, 0, 0),
-        visible=False, stock_source="reclaimed",
+        color=colors.part_override_rgb("bottom"), visible=False, stock_source="reclaimed",
     )
     add_panel(
         "Left", "Left Side Panel", side_height, depth, t,
         ROT_Y90, App.Vector(0, 0, t),
-        visible=True, stock_source="new",
+        color=colors.part_override_rgb("left"), visible=True, stock_source="new",
     )
     add_panel(
         "Right", "Right Side Panel", side_height, depth, t,
         ROT_Y90, App.Vector(width - t, 0, t),
-        visible=True, stock_source="new",
+        color=colors.part_override_rgb("right"), visible=True, stock_source="new",
     )
     add_panel(
         "Back", "Back Panel", width, side_height, t,
         ROT_X90, App.Vector(0, depth - t, t),
-        visible=False, stock_source="reclaimed",
+        color=colors.part_override_rgb("back"), visible=False, stock_source="reclaimed",
     )
 
     drawer_x_min = t + params.RAIL_CLEARANCE
@@ -82,7 +86,7 @@ def _create_one_piece(doc):
     add_panel(
         "Divider", "Divider Panel", params.INTERIOR_WIDTH, depth, t,
         IDENTITY, App.Vector(t, 0, params.ONE_PIECE_DIVIDER_Z_MIN),
-        visible=True, stock_source="new",
+        color=colors.part_override_rgb("top"), visible=True, stock_source="new",
     )
 
     ceiling_z = params.ONE_PIECE_TOP_PANEL_Z_MIN
@@ -91,7 +95,7 @@ def _create_one_piece(doc):
     add_panel(
         "Top", "Top Panel", width, depth, t,
         IDENTITY, App.Vector(0, 0, ceiling_z),
-        visible=True, stock_source="new",
+        color=colors.part_override_rgb("top"), visible=True, stock_source="new",
     )
 
     opening_bottom = params.ONE_PIECE_DIVIDER_Z_MIN + t
@@ -116,22 +120,22 @@ def _create_two_piece(doc):
     add_panel(
         "Bottom", "Bottom Panel", width, depth, t,
         IDENTITY, App.Vector(0, 0, 0),
-        visible=False, stock_source="reclaimed",
+        color=colors.part_override_rgb("bottom"), visible=False, stock_source="reclaimed",
     )
     add_panel(
         "BottomLeft", "Bottom Unit - Left Side", bottom_side_height, depth, t,
         ROT_Y90, App.Vector(0, 0, t),
-        visible=True, stock_source="new",
+        color=colors.part_override_rgb("left"), visible=True, stock_source="new",
     )
     add_panel(
         "BottomRight", "Bottom Unit - Right Side", bottom_side_height, depth, t,
         ROT_Y90, App.Vector(width - t, 0, t),
-        visible=True, stock_source="new",
+        color=colors.part_override_rgb("right"), visible=True, stock_source="new",
     )
     add_panel(
         "BottomBack", "Bottom Unit - Back", width, bottom_side_height, t,
         ROT_X90, App.Vector(0, depth - t, t),
-        visible=False, stock_source="reclaimed",
+        color=colors.part_override_rgb("back"), visible=False, stock_source="reclaimed",
     )
 
     drawer_x_min = t + params.RAIL_CLEARANCE
@@ -143,7 +147,7 @@ def _create_two_piece(doc):
     add_panel(
         "BottomTop", "Bottom Unit - Top Panel", width, depth, t,
         IDENTITY, App.Vector(0, 0, params.BOTTOM_UNIT_TOP_PANEL_Z_MIN),
-        visible=True, stock_source="new",
+        color=colors.part_override_rgb("top"), visible=True, stock_source="new",
     )
 
     # --- Hanging unit, resting on top of the bottom unit ------------
@@ -154,27 +158,27 @@ def _create_two_piece(doc):
         # Front edge sits exposed at the seam between the 2 freestanding
         # units (LAYOUT="two_piece" only — one_piece's analogous "Divider"
         # panel is already visible=True/new for the same reason), so it's
-        # colored to match the body (colors.part_rgb("body")) even though
-        # it's cut from reclaimed stock — a deliberate color override, same
-        # idea as furniture/bed's box_edge_band role (see CONTEXT.md).
+        # colored to match the "top" role even though it's cut from
+        # reclaimed stock — a deliberate color override, same idea as
+        # furniture/bed's box_edge_band role (see CONTEXT.md).
         "HangingBottom", "Hanging Unit - Bottom", width, depth, t,
         IDENTITY, App.Vector(0, 0, base_z),
-        color=colors.part_rgb("body"), visible=False, stock_source="reclaimed",
+        color=colors.part_override_rgb("top"), visible=False, stock_source="reclaimed",
     )
     add_panel(
         "HangingLeft", "Hanging Unit - Left Side", hanging_side_height, depth, t,
         ROT_Y90, App.Vector(0, 0, base_z + t),
-        visible=True, stock_source="new",
+        color=colors.part_override_rgb("left"), visible=True, stock_source="new",
     )
     add_panel(
         "HangingRight", "Hanging Unit - Right Side", hanging_side_height, depth, t,
         ROT_Y90, App.Vector(width - t, 0, base_z + t),
-        visible=True, stock_source="new",
+        color=colors.part_override_rgb("right"), visible=True, stock_source="new",
     )
     add_panel(
         "HangingBack", "Hanging Unit - Back", width, hanging_side_height, t,
         ROT_X90, App.Vector(0, depth - t, base_z + t),
-        visible=False, stock_source="reclaimed",
+        color=colors.part_override_rgb("back"), visible=False, stock_source="reclaimed",
     )
 
     ceiling_z = base_z + params.HANGING_UNIT_TOP_PANEL_Z_MIN
@@ -183,7 +187,7 @@ def _create_two_piece(doc):
     add_panel(
         "HangingTop", "Hanging Unit - Top Panel", width, depth, t,
         IDENTITY, App.Vector(0, 0, ceiling_z),
-        visible=True, stock_source="new",
+        color=colors.part_override_rgb("top"), visible=True, stock_source="new",
     )
 
     opening_bottom = base_z + t
@@ -228,7 +232,7 @@ def _add_side_shelves(add_panel, width):
         add_panel(
             prefix, label, proj, depth, t, IDENTITY,
             App.Vector(shelf_x_min, 0, z_shelf),
-            visible=True, stock_source="new",
+            color=colors.part_override_rgb("side_shelf"), visible=True, stock_source="new",
         )
 
         for side, y_center in (("Front", depth * 0.2), ("Back", depth * 0.8)):
@@ -256,7 +260,8 @@ def _add_side_shelves(add_panel, width):
         f"Hanging{side_name}Spare", f"Hanging Unit - {side_name} Side (Spare)",
         params.HANGING_UNIT_SIDE_HEIGHT, params.DEPTH, t, ROT_Y90,
         App.Vector(side_x, 0, params.BOTTOM_UNIT_HEIGHT + t),
-        visible=False, stock_source="new",
+        # Matches whichever side (left/right) it's a spare for.
+        color=colors.part_override_rgb(params.SIDE_SHELF_SIDE), visible=False, stock_source="new",
     )
 
 

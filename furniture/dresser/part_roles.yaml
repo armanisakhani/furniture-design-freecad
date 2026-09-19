@@ -1,0 +1,17 @@
+# Which color role (main/second/reused — see colors.py's MAIN_COLOR/
+# SECOND_COLOR/REUSED_MDF_COLOR) each named part uses, project-wide — the
+# single place answering "what color is X". Edit here to move a part to a
+# different role; nothing else needs to change.
+#
+# Any part here can also be overridden independently for just one order,
+# without touching this file, via that part's own <PART>_SWATCH env var —
+# an order item's own <part>_swatch key becomes that env var, e.g.
+# `left_swatch: brown` colors just the Left panel brown for that one
+# order, leaving this file's own left: main untouched for every other order.
+
+left: main       # Left Side Panel (dresser.py)
+right: main      # Right Side Panel
+top: main        # Top Panel
+bottom: reused   # Bottom Panel — hidden underside, cut from reclaimed stock by default
+back: reused     # Back Panel — hidden, assumed against a wall, cut from reclaimed stock by default
+mirror_frame: main   # optional mirror's frame rails/stiles

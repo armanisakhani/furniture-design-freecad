@@ -12,12 +12,15 @@ Same 3 names/env vars in furniture/dresser and furniture/wardrobe's own
 colors.py, so one ORDER entry format works for every furniture/ item,
 e.g. `bed:1:MAIN_COLOR=misty;SECOND_COLOR=white`.
 
-PART_ROLES is the single place that answers "what color is X" — box.py/
-bed.py look up a part's role here and resolve it with part_rgb(), instead
-of deciding colors ad hoc at each call site.
+PART_ROLES (loaded from furniture/bed/part_roles.yaml) is the single
+place that answers "what color is X" — box.py/bed.py look up a part's
+role here and resolve it with part_rgb()/part_override_rgb(), instead of
+deciding colors ad hoc at each call site.
 """
 
 import os
+
+import yaml
 
 # --- Named swatches (references/colors/) --------------------------------
 # RGB triples, 0-1 range, sampled/estimated by eye from the reference
@@ -55,42 +58,32 @@ def role_rgb(role):
 
 
 # --- Which part uses which role -------------------------------------------
-# The user's own part/color breakdown — 3 independent attributes, not 2:
-#   * box_top ("reused"): box.py's Top panel — the box's own flat MDF
-#     body. Follows REUSED_MDF_COLOR, same as the hidden/reclaimed
-#     structural material.
-#   * box_body ("reused"): Bottom + the 2 side walls' own MDF core —
-#     same idea as box_top (they're the same MDF batch as the rest of the
-#     shell), kept as its own role so it can be changed independently of
-#     box_top later if the 2 ever need to differ.
-#   * box_edge_band ("main"): the PVC edge-banding tape itself, glued
-#     around the box's cut edges — box.py models this as actual thin
-#     frame geometry around Top's own perimeter (real geometry, not a
-#     color label), and reuses the same role as a color label on Bottom/
-#     the 2 side walls (no real geometry there — they're never actually
-#     visible, visible=False). This is genuinely independent from
-#     box_top/box_body: changing the PVC trim color must NOT change
-#     either panel's own MDF color, and vice versa — that was the bug
-#     that prompted splitting this role out (box_edge_band used to double
-#     as both the trim color AND the sides' body color).
-# headboard/end_face_foot/mattress_stop (bed.py) are also "main" — the
-# crown/trim group PVC banding matches. Edit here to move a part to a
-# different role — nothing else needs to change.
-PART_ROLES = {
-    "box_top": "reused",
-    "box_body": "reused",
-    "box_edge_band": "main",
-    "drawer_face": "second",
-    "headboard": "main",
-    "end_face_foot": "main",
-    "mattress_stop": "main",
-}
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "part_roles.yaml")) as _f:
+    PART_ROLES = yaml.safe_load(_f)
 
 
 def part_rgb(part):
     if part not in PART_ROLES:
         raise ValueError(f"Unknown part {part!r}; known: {sorted(PART_ROLES)}")
     return role_rgb(PART_ROLES[part])
+
+
+def part_override_rgb(part):
+    """part_rgb(part), unless overridden for just this one order/build:
+    a <PART>_SWATCH env var (e.g. BOX_TOP_SWATCH, from an order item's own
+    box_top_swatch: key) names a specific swatch directly — independent
+    of PART_ROLES/main-second-reused; or a <PART>_ROLE env var (e.g.
+    BOX_TOP_ROLE, from an order item's own part_roles: {box_top: ...}
+    block) reassigns which of main/second/reused it uses instead of
+    part_roles.yaml's own default, without editing that file. SWATCH
+    wins if both are somehow set."""
+    swatch_override = os.environ.get(f"{part.upper()}_SWATCH")
+    if swatch_override:
+        return swatch_rgb(swatch_override)
+    role_override = os.environ.get(f"{part.upper()}_ROLE")
+    if role_override:
+        return role_rgb(role_override)
+    return part_rgb(part)
 
 
 # --- Position swatches: one solid color per box, by position -----------

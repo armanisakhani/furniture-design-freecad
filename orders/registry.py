@@ -103,7 +103,16 @@ def load_order(name):
             raise ValueError(f"Unknown furniture {furniture!r} in order {name!r}; known: {sorted(FURNITURE)}")
         qty = int(item.pop("qty", 1))
         gap_after = item.pop("gap_after", None)
+        # part_roles: {left: second, ...} — reassigns which of main/
+        # second/reused a named part uses (furniture/<name>/part_roles.yaml's
+        # own defaults), just for THIS item's own build, without editing
+        # that file. A nested dict, not a flat key, so it's popped out
+        # here and expanded into its own <PART>_ROLE env vars (colors.py's
+        # part_override_rgb checks those) rather than falling into the
+        # generic uppercase-flatten below.
+        part_roles = item.pop("part_roles", None) or {}
         overrides = {str(key).upper(): str(value) for key, value in item.items()}
+        overrides.update({f"{str(part).upper()}_ROLE": str(role) for part, role in part_roles.items()})
         entries.append(dict(
             name=furniture, qty=qty, overrides=overrides, instance_key=f"{furniture}-{index}",
             gap_after=float(gap_after) if gap_after is not None else None,

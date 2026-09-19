@@ -11,12 +11,31 @@ gap_after: 300                # mm gap AFTER this item's own copies, before the 
 style: standard                # see furniture/dresser/styles.yaml
 drawer_color_pattern: "0111"   # one '1'(main)/'0'(second) digit per drawer, top to bottom — overrides the style's own pattern
 
+width: 900                     # mm, left-right — DEPTH/DRAWER_COUNT/etc. don't scale with this, only WIDTH-derived panels do
 top_panel_mode: inset          # inset (standalone dresser) | on_top (furniture/wardrobe's two-piece bottom unit)
 has_mirror: false              # adds a wall-mounted mirror above the dresser's own Top panel
 mirror_align: center           # left | right | center — only matters when has_mirror: true
 
+# Per-part color overrides, just for this one item — see
+# furniture/dresser/part_roles.yaml for every part name + its own
+# project-wide default role. Two independent ways to override, both
+# scoped to this one order (part_roles.yaml itself stays untouched):
+#   part_roles:      # reassigns which of main/second/reused a part uses
+#     left: second      # -> colors.SECOND_COLOR instead of its usual main
+#   left_swatch: brown  # names an exact swatch directly, bypassing
+#                        # main/second/reused entirely (any furniture/
+#                        # dresser/colors.py SWATCHES name) — wins over
+#                        # part_roles if both are set for the same part
+part_roles: null
+left_swatch: null
+right_swatch: null
+top_swatch: null
+bottom_swatch: null
+back_swatch: null
+mirror_frame_swatch: null
+
 # Order-wide, not per-item — set once at the top of the order's own YAML:
 #   colors:
-#     main: misty      # MAIN_COLOR — body (see furniture/dresser/colors.py's PART_ROLES)
+#     main: misty      # MAIN_COLOR — see furniture/dresser/part_roles.yaml for which parts default to it
 #     second: white     # SECOND_COLOR — the drawer_color_pattern's '0' digit
 #     reused: white     # REUSED_MDF_COLOR — hidden/reclaimed panels

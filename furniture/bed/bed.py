@@ -63,7 +63,7 @@ def create_mattress_stop_foot(doc):
             params.FRAME_LENGTH - params.MATTRESS_TO_FRAME_GAP_LENGTH,
             params.BOX_HEIGHT,
         ),
-        color=colors.part_rgb("mattress_stop"), visible=True, stock_source="new",
+        color=colors.part_override_rgb("mattress_stop"), visible=True, stock_source="new",
     )
 
 
@@ -81,7 +81,7 @@ def create_mattress_stop_side(doc, x_min, label_suffix):
         thickness=params.MDF_THICKNESS,
         rotation=IDENTITY,
         target_min=App.Vector(x_min, 0, params.BOX_HEIGHT),
-        color=colors.part_rgb("mattress_stop"), visible=True, stock_source="new",
+        color=colors.part_override_rgb("mattress_stop"), visible=True, stock_source="new",
     )
 
 
@@ -114,7 +114,7 @@ def create_end_face(doc):
         thickness=t,
         rotation=ROT_X90,
         target_min=App.Vector(0, params.FRAME_LENGTH - t, z_min),
-        color=colors.part_rgb("end_face_foot"), visible=True, stock_source="new",
+        color=colors.part_override_rgb("end_face_foot"), visible=True, stock_source="new",
     )
 
 
@@ -134,7 +134,7 @@ def create_headboard(doc):
         thickness=t,
         rotation=ROT_X90,
         target_min=App.Vector(0, -t, z_min),
-        color=colors.part_rgb("headboard"), visible=True, stock_source="new",
+        color=colors.part_override_rgb("headboard"), visible=True, stock_source="new",
     )
 
 

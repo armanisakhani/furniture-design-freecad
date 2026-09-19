@@ -1,0 +1,56 @@
+# main: misty, second: brown — see furniture/*/example.yaml for every
+# other overridable parameter, and furniture/*/styles.yaml for style names.
+#
+# View: tools/order.sh misty_brown
+# Cutlist report: tools/order.sh misty_brown --report
+
+colors:
+  main: misty
+  second: cuppuccino
+
+items:
+  - furniture: bed
+    qty: 1
+    # part_roles reassigns which of main/second/reused a named part uses,
+    # just for this item — see furniture/bed/part_roles.yaml for every
+    # part name + its own project-wide default.
+    part_roles:
+      box_top: main
+      box_body: main
+      box_edge_band: main
+      drawer_face: second
+      headboard: main
+      end_face_foot: main
+      mattress_stop: main
+
+  - furniture: dresser
+    qty: 1
+    drawer_color_pattern: "0111"
+    width: 800
+    has_mirror: true
+    gap_after: 0
+    # part_roles reassigns which of main/second/reused a named part uses,
+    # just for this item — see furniture/dresser/part_roles.yaml for
+    # every part name + its own project-wide default.
+    part_roles:
+      left: main
+      right: main
+      top: main
+      bottom: reused
+      back: reused
+      mirror_frame: main
+  - furniture: wardrobe
+    qty: 1
+    style: two-piece
+    color_pattern: "1_0111"
+    width: 800
+    # part_roles reassigns which of main/second/reused a named part uses,
+    # just for this item — see furniture/wardrobe/part_roles.yaml for
+    # every part name + its own project-wide default.
+    part_roles:
+      left: main
+      right: main
+      top: main
+      bottom: reused
+      back: reused
+      side_shelf: main

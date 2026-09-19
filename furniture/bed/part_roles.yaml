@@ -1,0 +1,30 @@
+# Which color role (main/second/reused — see colors.py's MAIN_COLOR/
+# SECOND_COLOR/REUSED_MDF_COLOR) each named part uses, project-wide — the
+# single place answering "what color is X". Edit here to move a part to a
+# different role; nothing else needs to change.
+#
+# Any part here can also be overridden independently for just one order,
+# without touching this file, via that part's own `part_roles:` block in
+# the order item (reassigns the role, e.g. `box_top: second`) or its own
+# `<part>_swatch` key (names an exact swatch directly, e.g.
+# `box_top_swatch: brown`) — see furniture/bed/example.yaml.
+#
+# 3 independent attributes, not 2:
+#   * box_top: box.py's Top panel — the box's own flat MDF body.
+#   * box_body: Bottom + the 2 side walls' own MDF core — same idea as
+#     box_top (they're the same MDF batch as the rest of the shell), kept
+#     as its own role so it can be changed independently of box_top.
+#   * box_edge_band: the PVC edge-banding tape itself, colored via
+#     core/panel.py's EdgeColor (a real per-face color, not a separate
+#     overlapping strip) — genuinely independent from box_top/box_body:
+#     changing the PVC trim color must NOT change either panel's own MDF
+#     color, and vice versa.
+# headboard/end_face_foot/mattress_stop (bed.py) are also "main" — the
+# crown/trim group PVC banding matches.
+box_top: main
+box_body: main
+box_edge_band: main
+drawer_face: second
+headboard: main
+end_face_foot: main
+mattress_stop: main

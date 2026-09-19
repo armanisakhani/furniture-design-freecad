@@ -1,0 +1,18 @@
+# Which color role (main/second/reused — see colors.py's MAIN_COLOR/
+# SECOND_COLOR/REUSED_MDF_COLOR) each named part uses, project-wide — the
+# single place answering "what color is X". Edit here to move a part to a
+# different role; nothing else needs to change.
+#
+# Any part here can also be overridden independently for just one order,
+# without touching this file, via that part's own <PART>_SWATCH env var —
+# an order item's own <part>_swatch key becomes that env var, e.g.
+# `left_swatch: brown` colors just the left side panel(s) brown for that
+# one order, leaving this file's own left: main untouched for every other
+# order.
+
+left: main         # Left/BottomLeft/HangingLeft side panels (wardrobe.py), both layouts
+right: main        # Right/BottomRight/HangingRight side panels
+top: main          # Top/HangingTop/BottomTop/Divider/HangingBottom — the visible, new-stock horizontal panels
+bottom: reused     # Bottom Panel — hidden base, cut from reclaimed stock by default
+back: reused       # Back/BottomBack/HangingBack — hidden, assumed against a wall, both layouts
+side_shelf: main   # the SIDE_SHELF_COUNT shelf boards themselves (two_piece only)

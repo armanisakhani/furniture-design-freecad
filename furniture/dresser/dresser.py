@@ -77,15 +77,17 @@ def create_dresser(doc):
                   target_min, material="MDF", color=None,
                   visible=True, stock_source="new"):
         # core.panel.create_assembly_panel supplies the stock_source ->
-        # color default rule (CONTEXT.md); this module's own colors
-        # (colors.REUSED_COLOR/colors.part_rgb("body")) are passed in.
+        # color default rule (CONTEXT.md); every call below that isn't
+        # reclaimed/hidden passes its own explicit color (colors.py's
+        # part_override_rgb, per-part-roles.yaml) — new_color here is
+        # just a safety-net default, not expected to actually be used.
         obj = create_assembly_panel(
             doc, obj_name, label,
             length, width_, thickness, rotation, target_min,
             material=material, color=color, visible=visible,
             stock_source=stock_source,
             reclaimed_color=colors.REUSED_COLOR,
-            new_color=colors.part_rgb("body"),
+            new_color=colors.REUSED_COLOR,
         )
         panels.append(obj)
         return obj
@@ -94,11 +96,12 @@ def create_dresser(doc):
     # Bottom: horizontal, full WIDTH x DEPTH footprint — the Left/Right
     # panels rest on top of its 2 edges (per the user's own correction;
     # unlike the Top panel below, this one is NOT inset between them).
-    # Hidden (underside, never seen).
+    # Hidden (underside, never seen) — still its own independent "bottom"
+    # role (part_roles.yaml), same idea as furniture/bed's box_body.
     add_panel(
         "Bottom", "Bottom Panel", width, depth, t,
         IDENTITY, App.Vector(0, 0, bottom_z),
-        visible=False, stock_source="reclaimed",
+        color=colors.part_override_rgb("bottom"), visible=False, stock_source="reclaimed",
     )
     # Top: inset BETWEEN the Left/Right panels (TOP_PANEL_WIDTH), not
     # resting on top of them — see module docstring. Its own front edge
@@ -109,22 +112,24 @@ def create_dresser(doc):
         "Top", "Top Panel", params.TOP_PANEL_WIDTH, params.TOP_PANEL_DEPTH, t,
         IDENTITY,
         App.Vector(params.TOP_PANEL_X_MIN, params.TOP_PANEL_Y_MIN, bottom_z + params.TOP_PANEL_Z_MIN),
-        visible=True, stock_source="new",
+        color=colors.part_override_rgb("top"), visible=True, stock_source="new",
     )
     # Left/Right: visible (free-standing piece, unlike furniture/bed's
     # boxes tucked into an assembly), full DEPTH, resting on top of the
     # Bottom panel (bottom_z + t) and running side_height tall — SIDE_TOP_LIP
     # taller than the Top panel's own surface, forming the lip on each end
-    # by themselves (no separate part).
+    # by themselves (no separate part). Each side is its own independent
+    # role (part_roles.yaml) — e.g. an order item's own left_swatch: key
+    # colors just the Left panel, leaving Right/Top/Bottom untouched.
     add_panel(
         "Left", "Left Side Panel", side_height, depth, t,
         ROT_Y90, App.Vector(0, 0, bottom_z + t),
-        visible=True, stock_source="new",
+        color=colors.part_override_rgb("left"), visible=True, stock_source="new",
     )
     add_panel(
         "Right", "Right Side Panel", side_height, depth, t,
         ROT_Y90, App.Vector(width - t, 0, bottom_z + t),
-        visible=True, stock_source="new",
+        color=colors.part_override_rgb("right"), visible=True, stock_source="new",
     )
     # Back: closes the far (Y=depth) end, same side_height as Left/Right
     # so the carcass stays fully enclosed up to the lip. Hidden — assumed
@@ -132,7 +137,7 @@ def create_dresser(doc):
     add_panel(
         "Back", "Back Panel", width, side_height, t,
         ROT_X90, App.Vector(0, depth - t, bottom_z + t),
-        visible=False, stock_source="reclaimed",
+        color=colors.part_override_rgb("back"), visible=False, stock_source="reclaimed",
     )
 
     _add_top_brackets(add_panel, width, depth)
@@ -171,7 +176,7 @@ def _add_mirror(add_panel, width, depth):
     y_min = depth - t
     z_min = params.HEIGHT + params.MIRROR_HANG_GAP
 
-    kwargs = dict(color=colors.part_rgb("mirror_frame"), visible=True, stock_source="new")
+    kwargs = dict(color=colors.part_override_rgb("mirror_frame"), visible=True, stock_source="new")
     add_panel(
         "MirrorTopRail", "Mirror - Top Rail", outer_w, t, bw, IDENTITY,
         App.Vector(x_min, y_min, z_min + outer_h - bw), **kwargs,

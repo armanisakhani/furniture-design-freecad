@@ -114,10 +114,10 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
         edge_band_color = box_color
         drawer_front_color = box_color
     else:
-        top_color = colors.part_rgb("box_top")
-        body_color = colors.part_rgb("box_body")
-        edge_band_color = colors.part_rgb("box_edge_band")
-        drawer_front_color = colors.part_rgb("drawer_face")
+        top_color = colors.part_override_rgb("box_top")
+        body_color = colors.part_override_rgb("box_body")
+        edge_band_color = colors.part_override_rgb("box_edge_band")
+        drawer_front_color = colors.part_override_rgb("drawer_face")
 
     panels = []
 

@@ -12,9 +12,29 @@ style: two-piece             # see furniture/wardrobe/styles.yaml
 layout: two_piece            # one_piece | two_piece — overrides the style's own layout
 color_pattern: "1_0111"      # "<door digit>_<drawer pattern>" — overrides the style's own pattern
 door_swatch: null            # e.g. "anthracite" — an independent door color, not just main/second (any furniture/wardrobe/colors.py SWATCHES name)
+width: 800                   # mm, left-right — DEPTH/DRAWER_COUNT/etc. don't scale with this, only WIDTH-derived panels do
+
+# Per-part color overrides, just for this one item — see
+# furniture/wardrobe/part_roles.yaml for every part name + its own
+# project-wide default role ("left"/"right" apply to that side in EVERY
+# unit, one_piece or two_piece). Two independent ways to override, both
+# scoped to this one order (part_roles.yaml itself stays untouched):
+#   part_roles:      # reassigns which of main/second/reused a part uses
+#     left: second      # -> colors.SECOND_COLOR instead of its usual main
+#   left_swatch: brown  # names an exact swatch directly, bypassing
+#                        # main/second/reused entirely (any furniture/
+#                        # wardrobe/colors.py SWATCHES name) — wins over
+#                        # part_roles if both are set for the same part
+part_roles: null
+left_swatch: null
+right_swatch: null
+top_swatch: null
+bottom_swatch: null
+back_swatch: null
+side_shelf_swatch: null
 
 # Order-wide, not per-item — set once at the top of the order's own YAML:
 #   colors:
-#     main: misty      # MAIN_COLOR — body (see furniture/wardrobe/colors.py's PART_ROLES)
+#     main: misty      # MAIN_COLOR — see furniture/wardrobe/part_roles.yaml for which parts default to it
 #     second: white     # SECOND_COLOR — the color_pattern's '0' digits
 #     reused: white     # REUSED_MDF_COLOR — hidden/reclaimed panels

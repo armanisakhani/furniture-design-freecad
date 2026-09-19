@@ -8,15 +8,18 @@ furniture/bed/colors.py's own module docstring for the full picture):
 Same 3 names/env vars in furniture/bed and furniture/wardrobe's own
 colors.py, so one ORDER entry format works for every furniture/ item.
 
-PART_ROLES answers "what color is X" for this module's fixed-role parts
-(currently just "body" — the carcass). The drawer Face's own color is
-NOT here — it's picked per-drawer by DRAWER_COLOR_PATTERN (params.py),
-a '1'/'0' digit string (one digit per drawer, top to bottom) choosing
-main/second per drawer instance — a distinct, preserved feature, not
-replaced by PART_ROLES.
+PART_ROLES (loaded from furniture/dresser/part_roles.yaml) answers "what
+color is X" for this module's fixed-role parts — edit that file to move a
+part to a different role, nothing else needs to change. The drawer Face's
+own color is NOT here — it's picked per-drawer by DRAWER_COLOR_PATTERN
+(params.py), a '1'/'0' digit string (one digit per drawer, top to bottom)
+choosing main/second per drawer instance — a distinct, preserved feature,
+not replaced by PART_ROLES.
 """
 
 import os
+
+import yaml
 
 SWATCHES = {
     "white": (1.0, 1.0, 1.0),
@@ -51,13 +54,30 @@ def role_rgb(role):
 
 
 # --- Which part uses which role -------------------------------------------
-PART_ROLES = {
-    "body": "main",           # Left/Right/Bottom/Top carcass panels (dresser.py)
-    "mirror_frame": "main",   # optional mirror's frame rails/stiles (dresser.py)
-}
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "part_roles.yaml")) as _f:
+    PART_ROLES = yaml.safe_load(_f)
 
 
 def part_rgb(part):
     if part not in PART_ROLES:
         raise ValueError(f"Unknown part {part!r}; known: {sorted(PART_ROLES)}")
     return role_rgb(PART_ROLES[part])
+
+
+def part_override_rgb(part):
+    """part_rgb(part), unless overridden for just this one order/build:
+    a <PART>_SWATCH env var (e.g. LEFT_SWATCH, from an order item's own
+    left_swatch: key) names a specific swatch directly — independent of
+    PART_ROLES/main-second-reused, same idea as furniture/bed's
+    MIDDLE_BOX_SWATCH/SIDE_BOX_SWATCH; or a <PART>_ROLE env var (e.g.
+    LEFT_ROLE, from an order item's own part_roles: {left: ...} block)
+    reassigns which of main/second/reused it uses instead of
+    part_roles.yaml's own default, without editing that file. SWATCH
+    wins if both are somehow set."""
+    swatch_override = os.environ.get(f"{part.upper()}_SWATCH")
+    if swatch_override:
+        return swatch_rgb(swatch_override)
+    role_override = os.environ.get(f"{part.upper()}_ROLE")
+    if role_override:
+        return role_rgb(role_override)
+    return part_rgb(part)
