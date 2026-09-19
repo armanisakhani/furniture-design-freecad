@@ -35,7 +35,7 @@ for _p in (_ROOT, os.path.join(_ROOT, "tools"), _ORDERS_DIR):
 
 from registry import FURNITURE, load_order, order_paths, require_item_built
 from order_cutlist import load_order_panels
-from report_labels import translate, FA_LABELS
+from report_labels import translate, normalize_key, FA_LABELS
 from svg_cutting import sheet_svg
 import cutlist as shared
 
@@ -113,22 +113,25 @@ def rank_sheet_sizes(rows, color):
     return candidates
 
 
-# Panels whose (length, width) or color fell back to a generic label/style
-# this run — report_labels.FA_LABELS and generate_report.COLOR_STYLE are
-# both static lookup tables keyed by exact numbers seen when they were
-# written, not something that auto-refreshes; a size/color tweak in some
-# furniture's params.py silently drops a panel out of them instead of
-# erroring, so main() prints this list as a visible warning rather than
-# letting the report quietly show worse labels/colors than before.
+# Panels whose own label pattern or color fell back to a generic label/
+# style this run — report_labels.FA_LABELS and generate_report.COLOR_STYLE
+# are both static lookup tables, not something that auto-refreshes; a new
+# part (or a color genuinely never seen before) silently drops out of them
+# instead of erroring, so main() prints this list as a visible warning
+# rather than letting the report quietly show worse labels/colors than
+# before. Unlike the old size-keyed FA_LABELS, a WIDTH/STYLE/etc. override
+# that only changes a panel's DIMENSIONS no longer triggers this — the key
+# is the panel's own descriptive label, not its size.
 STALE_LOOKUPS = []
 
 
 def table_rows_html(rows):
     trs = []
     for (length, width, thickness), row in sorted(rows.items()):
-        label = translate(length, width)
-        if (round(length, 1), round(width, 1)) not in FA_LABELS:
-            STALE_LOOKUPS.append(f"label ({length:.1f}×{width:.1f}): {row['labels'][0]!r} -> {label!r} (generic fallback)")
+        raw_label = row["labels"][0]
+        label = translate(raw_label, length, width)
+        if normalize_key(raw_label) not in FA_LABELS:
+            STALE_LOOKUPS.append(f"label {raw_label!r} -> {label!r} (generic fallback)")
         trs.append(
             f'<tr><td class="dim mono">{length:.1f} × {width:.1f} × {thickness:.0f}</td>'
             f'<td class="qty">{row["qty"]}</td><td class="label">{label}</td></tr>'

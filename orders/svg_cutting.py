@@ -22,7 +22,7 @@ def _font_for(w, h):
 
 def sheet_svg(bin_index, placements, sheet_w, sheet_h, fill_var, stroke_var, aria_label):
     """placements: pack_onto's own return value (list of (bin_index, x, y,
-    w, h, rid, length, width)) — draws only the ones on bin_index."""
+    w, h, rid, length, width, label)) — draws only the ones on bin_index."""
     transpose = sheet_w < sheet_h
     disp_w, disp_h = (sheet_h, sheet_w) if transpose else (sheet_w, sheet_h)
     parts = [
@@ -33,11 +33,11 @@ def sheet_svg(bin_index, placements, sheet_w, sheet_h, fill_var, stroke_var, ari
         f'<rect x="10" y="10" width="{disp_w - 20}" height="{disp_h - 20}" '
         f'fill="var(--sheet-bg)" stroke="var(--line-strong)" stroke-width="4" stroke-dasharray="14 10" />',
     ]
-    for (bi, x, y, w, h, rid, length, width) in placements:
+    for (bi, x, y, w, h, rid, length, width, raw_label) in placements:
         if bi != bin_index:
             continue
         dx, dy, dw, dh = (y, x, h, w) if transpose else (x, y, w, h)
-        label = translate(length, width)
+        label = translate(raw_label, length, width)
         cx, cy = dx + dw / 2, dy + dh / 2
         fs = _font_for(dw, dh)
         rotate = dw < dh

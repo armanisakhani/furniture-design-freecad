@@ -145,9 +145,10 @@ def group_reclaimed(panels):
 
 
 def pack_onto(rows, sheet_w, sheet_h, kerf=KERF, margin=TRIM_MARGIN):
-    """rows: {(length, width, thickness): {"qty": n}}. Returns
-    (sheets_used, placements) where placements is [(sheet_index, x, y, w, h, rid)],
-    coordinates already shifted back to un-inflated, margin-relative sheet space."""
+    """rows: {(length, width, thickness): {"qty": n, "labels": [...]}}.
+    Returns (sheets_used, placements) where placements is [(sheet_index,
+    x, y, w, h, rid, length, width, label)], coordinates already shifted
+    back to un-inflated, margin-relative sheet space."""
     usable_w = sheet_w - 2 * margin
     usable_h = sheet_h - 2 * margin
 
@@ -160,7 +161,11 @@ def pack_onto(rows, sheet_w, sheet_h, kerf=KERF, margin=TRIM_MARGIN):
     rid_map = {}
     next_rid = 0
     for (length, width, thickness), row in rows.items():
-        rid_map[next_rid] = (length, width, thickness)
+        # row["labels"][0]: one representative FreeCAD label for every
+        # panel this row groups together (same size+color, possibly
+        # different instances) — carried through so a cutting diagram can
+        # show a real descriptive name per placed piece, not just its size.
+        rid_map[next_rid] = (length, width, thickness, row["labels"][0])
         for _ in range(row["qty"]):
             packer.add_rect(length + kerf, width + kerf, rid=next_rid)
         next_rid += 1
@@ -178,8 +183,8 @@ def pack_onto(rows, sheet_w, sheet_h, kerf=KERF, margin=TRIM_MARGIN):
     placements = []
     for bin_index, abin in enumerate(packer):
         for rect in abin:
-            length, width, thickness = rid_map[rect.rid]
-            placements.append((bin_index, rect.x, rect.y, rect.width - kerf, rect.height - kerf, rect.rid, length, width))
+            length, width, thickness, label = rid_map[rect.rid]
+            placements.append((bin_index, rect.x, rect.y, rect.width - kerf, rect.height - kerf, rect.rid, length, width, label))
 
     return len(packer), placements
 
