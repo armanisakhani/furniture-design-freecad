@@ -5,8 +5,8 @@
 # Cutlist report: tools/order.sh misty_brown --report
 
 colors:
-  main: misty
-  second: cuppuccino
+  main: cuppuccino
+  second: pearl
 
 items:
   - furniture: bed
@@ -15,18 +15,18 @@ items:
     # just for this item — see furniture/bed/part_roles.yaml for every
     # part name + its own project-wide default.
     part_roles:
-      box_top: second
-      box_body: second
-      box_edge_band: second
-      drawer_face: main
-      headboard: second
-      end_face_foot: second
-      mattress_stop: second
+      box_top: reused
+      box_body: reused
+      box_edge_band: main
+      drawer_face: second
+      headboard: main
+      end_face_foot: main
+      mattress_stop: main
 
   - furniture: dresser
     qty: 1
     drawer_color_pattern: "0111"
-    width: 850
+    width: 900
     has_mirror: true
     gap_after: 0
     # part_roles reassigns which of main/second/reused a named part uses,
@@ -43,7 +43,7 @@ items:
     qty: 1
     style: two-piece
     color_pattern: "1_0111"
-    width: 850
+    width: 900
     # one '1'(main)/'0'(second) digit per side shelf, top to bottom — same
     # convention as color_pattern's own drawer digits, independent of
     # part_roles (two_piece only).
@@ -51,13 +51,16 @@ items:
     # part_roles reassigns which of main/second/reused a named part uses,
     # just for this item — see furniture/wardrobe/part_roles.yaml for
     # every part name + its own project-wide default. bottom_top/
-    # hanging_bottom are the 2 panels sandwiched at the seam between the
-    # stacked units (two_piece only) — their own exposed cut-edge always
-    # matches "main" regardless (hardcoded, not one of these roles).
+    # hanging_bottom/hanging_top's own exposed cut-edge always matches
+    # "main" regardless of what they're set to below (hardcoded, not one
+    # of these roles) — bottom_top/hanging_bottom are the 2 panels
+    # sandwiched at the seam between the stacked units (two_piece only);
+    # hanging_top is the wardrobe's own visible ceiling.
     part_roles:
       left: main
       right: main
       top: reused
+      hanging_top: main
       bottom: reused
       back: reused
       bottom_top: reused
