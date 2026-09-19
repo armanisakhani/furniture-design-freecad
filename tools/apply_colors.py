@@ -22,6 +22,12 @@ doc = App.ActiveDocument
 if doc is None:
     print("No active document — open a .FCStd file first.")
 else:
+    # Recompute FIRST, not after: recomputing a Part::FeaturePython
+    # reassigns its Shape, which resets ViewObject.DiffuseColor back to a
+    # flat array matching ShapeColor — wiping out the per-face EdgeColor
+    # split set below if it ran afterward instead (confirmed: the edge
+    # silently tracked the body color instead of staying independent).
+    doc.recompute()
     count = 0
     for obj in doc.Objects:
         if hasattr(obj, "PanelColor") and obj.ViewObject is not None:
@@ -41,7 +47,6 @@ else:
                 if edge_rgba != panel_rgba and len(obj.Shape.Faces) == 6:
                     obj.ViewObject.DiffuseColor = [edge_rgba] * 4 + [panel_rgba] * 2
             count += 1
-    doc.recompute()
     print(f"Applied PanelColor to {count} object(s) in '{doc.Name}'.")
 
     # Same missing-view-data issue, different symptom: a plain Part::Box
