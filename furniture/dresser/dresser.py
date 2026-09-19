@@ -112,12 +112,16 @@ def create_dresser(doc):
     # resting on top of them — see module docstring. Its own front edge
     # also retreats a little (TOP_PANEL_Y_MIN) to clear the topmost
     # drawer's taller Face (see _add_drawer). Still the one always-
-    # visible new-stock panel, same role as furniture/bed's Top.
+    # visible panel, same role as furniture/bed's Top. Same reclaimed-vs-
+    # new reasoning as Bottom/Back above — "top" resolving to anything but
+    # "reused" needs a real new sheet in that color, per the user's own
+    # request (Top isn't exempt just for being the always-visible one).
     add_panel(
         "Top", "Top Panel", params.TOP_PANEL_WIDTH, params.TOP_PANEL_DEPTH, t,
         IDENTITY,
         App.Vector(params.TOP_PANEL_X_MIN, params.TOP_PANEL_Y_MIN, bottom_z + params.TOP_PANEL_Z_MIN),
-        color=colors.part_override_rgb("top"), visible=True, stock_source="new",
+        color=colors.part_override_rgb("top"), visible=True,
+        stock_source="reclaimed" if colors.part_effective_role("top") == "reused" else "new",
     )
     # Left/Right: visible (free-standing piece, unlike furniture/bed's
     # boxes tucked into an assembly), full DEPTH, resting on top of the
@@ -129,12 +133,14 @@ def create_dresser(doc):
     add_panel(
         "Left", "Left Side Panel", side_height, depth, t,
         ROT_Y90, App.Vector(0, 0, bottom_z + t),
-        color=colors.part_override_rgb("left"), visible=True, stock_source="new",
+        color=colors.part_override_rgb("left"), visible=True,
+        stock_source="reclaimed" if colors.part_effective_role("left") == "reused" else "new",
     )
     add_panel(
         "Right", "Right Side Panel", side_height, depth, t,
         ROT_Y90, App.Vector(width - t, 0, bottom_z + t),
-        color=colors.part_override_rgb("right"), visible=True, stock_source="new",
+        color=colors.part_override_rgb("right"), visible=True,
+        stock_source="reclaimed" if colors.part_effective_role("right") == "reused" else "new",
     )
     # Back: closes the far (Y=depth) end, same side_height as Left/Right
     # so the carcass stays fully enclosed up to the lip. Hidden — assumed
@@ -182,7 +188,10 @@ def _add_mirror(add_panel, width, depth):
     y_min = depth - t
     z_min = params.HEIGHT + params.MIRROR_HANG_GAP
 
-    kwargs = dict(color=colors.part_override_rgb("mirror_frame"), visible=True, stock_source="new")
+    kwargs = dict(
+        color=colors.part_override_rgb("mirror_frame"), visible=True,
+        stock_source="reclaimed" if colors.part_effective_role("mirror_frame") == "reused" else "new",
+    )
     add_panel(
         "MirrorTopRail", "Mirror - Top Rail", outer_w, t, bw, IDENTITY,
         App.Vector(x_min, y_min, z_min + outer_h - bw), **kwargs,

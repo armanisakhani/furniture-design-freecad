@@ -122,16 +122,18 @@ BOX_HEIGHT = BOX_INTERIOR_HEIGHT + 2 * MDF_THICKNESS
 PVC_THICKNESS = 2
 
 # Whether the Box shell's Bottom + 2 long side walls are cut from new stock
-# too (same as the Top panel, which is always new — it bears the mattress)
-# instead of reclaimed scrap, REGARDLESS of color — a blanket "spend more,
-# always buy new" override. Off by default: Bottom/side walls still go
-# reclaimed to save cost, UNLESS their own "box_body" role (colors.py's
+# too instead of reclaimed scrap, REGARDLESS of color — a blanket "spend
+# more, always buy new" override. Off by default: Bottom/side walls still
+# go reclaimed to save cost, UNLESS their own "box_body" role (colors.py's
 # part_roles.yaml) resolves to something other than "reused" already,
-# which forces new stock on its own too (reclaimed scrap is always
-# assumed a single color, so an explicitly different color can't come
-# from it — see box.py's create_box). Env var only (not part of STYLES)
-# since it's a "how much do I want to spend" toggle orthogonal to the
-# style presets: `BOX_SHELL_ALL_NEW=1 make cutlist-bed`.
+# which forces new stock on its own too — same reasoning the Top panel's
+# own "box_top" role already follows independently (reclaimed scrap is
+# always assumed a single color, so an explicitly different color can't
+# come from it — see box.py's create_box). This toggle only ever affects
+# Bottom/the 2 side walls, never Top, which always makes its own
+# new-vs-reclaimed call from box_top alone. Env var only (not part of
+# STYLES) since it's a "how much do I want to spend" toggle orthogonal to
+# the style presets: `BOX_SHELL_ALL_NEW=1 make cutlist-bed`.
 BOX_SHELL_ALL_NEW = os.environ.get("BOX_SHELL_ALL_NEW", "") not in ("", "0", "false", "False")
 
 # Give every box a single solid color instead of a 2-tone body/

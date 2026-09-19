@@ -173,10 +173,16 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
         _IDENTITY, App.Vector(shell_panel_x_min, y_offset, 0),
         color=body_color, edge_color=edge_band_color, visible=False, stock_source=shell_stock_source,
     )
+    # Same reclaimed-vs-new reasoning as shell_stock_source above: reused
+    # scrap is always assumed a single color, so a "box_top" role other
+    # than "reused" needs a real new sheet in that color — per the user's
+    # own request, Top now follows this the same way box_body does,
+    # instead of always being new regardless of its own color.
+    top_stock_source = "reclaimed" if colors.part_effective_role("box_top") == "reused" else "new"
     add_panel(
         "Top", "Top Panel", params.BOX_TOP_PANEL_WIDTH, box_length, t,
         _IDENTITY, App.Vector(params.BOX_TOP_X_MIN, y_offset, box_height - t),
-        color=top_color, edge_color=edge_band_color, visible=True, stock_source="new",
+        color=top_color, edge_color=edge_band_color, visible=True, stock_source=top_stock_source,
     )
 
     # 2 long side walls: thin along Y, trapped between top/bottom (Z), at
