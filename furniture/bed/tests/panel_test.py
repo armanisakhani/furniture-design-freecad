@@ -27,6 +27,7 @@ for _p in (_ROOT_DIR, _BED_DIR):
 
 import FreeCAD as App
 
+import colors
 import params
 from core.panel import create_panel
 
@@ -47,7 +48,7 @@ def main():
         width=params.BOX_TOP_PANEL_WIDTH,
         thickness=params.MDF_THICKNESS,
         material="MDF",
-        color=params.BODY_COLOR,
+        color=colors.part_rgb("box_top"),
         visible=True,
         stock_source="new",
     )

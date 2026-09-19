@@ -45,13 +45,20 @@ SCENE_JSON = os.path.join(OUTPUT_DIR, "order_scene.json")
 RENDER_PNG = os.path.join(OUTPUT_DIR, "order_render.png")
 REPORT_HTML = os.path.join(OUTPUT_DIR, "report.html")
 
-# Always brown/misty (see the project's fixed color palette) — an
-# unrecognized color (e.g. mirror glass) still renders fine, just with
-# the generic "reclaimed" swatch instead of breaking report generation.
+# Every new-stock color any furniture/ module's colors.py SWATCHES can
+# currently produce (misty/brown/white/glass — see each module's own
+# MAIN_COLOR/SECOND_COLOR/REUSED_MDF_COLOR + PART_ROLES) — an unrecognized
+# color still renders fine, just with the generic "reclaimed" swatch
+# instead of breaking report generation (and gets flagged via
+# STALE_LOOKUPS below).
 COLOR_STYLE = {
     (0.31, 0.44, 0.5): dict(css="misty", fill="var(--misty-soft)", stroke="var(--misty)"),
     (0.43, 0.35, 0.28): dict(css="brown", fill="var(--brown-soft)", stroke="var(--brown)"),
     (0.78, 0.83, 0.85): dict(css="glass", fill="var(--glass-soft)", stroke="var(--glass)"),
+    # Distinct from the "reclaimed" style below even though both render
+    # near-white — this is new-stock white (box body/drawer front/door),
+    # a different section of the report than reclaimed/hidden panels.
+    (1.0, 1.0, 1.0): dict(css="white", fill="var(--white-soft)", stroke="var(--white)"),
 }
 DEFAULT_STYLE = dict(css="reclaimed", fill="var(--reclaimed-soft)", stroke="var(--reclaimed)")
 RECLAIMED_STYLE = dict(css="reclaimed", fill="var(--reclaimed-soft)", stroke="var(--reclaimed)")
@@ -223,6 +230,7 @@ img{max-width:100%}
   --brown: #6d5642; --brown-soft: #efe6dc;
   --reclaimed: #a89c85; --reclaimed-soft: #eee8dc;
   --glass: #6b8f9e; --glass-soft: #e9f1f3;
+  --white: #8a8f96; --white-soft: #eef0f2;
   --sheet-bg: #fbf8f1; --sheet-waste: #eee7d6;
   --warn: #a3542f; --warn-soft: #f5e4d7;
 }
@@ -234,6 +242,7 @@ img{max-width:100%}
     --brown: #c9a583; --brown-soft: #362c22;
     --reclaimed: #b9ac8f; --reclaimed-soft: #2c2718;
     --glass: #9fc4d3; --glass-soft: #202b2e;
+    --white: #c7ccd1; --white-soft: #2a2d31;
     --sheet-bg: #221e16; --sheet-waste: #2a2519;
     --warn: #d38e64; --warn-soft: #362317;
   }
@@ -245,6 +254,7 @@ img{max-width:100%}
   --brown: #c9a583; --brown-soft: #362c22;
   --reclaimed: #b9ac8f; --reclaimed-soft: #2c2718;
   --glass: #9fc4d3; --glass-soft: #202b2e;
+  --white: #c7ccd1; --white-soft: #2a2d31;
   --sheet-bg: #221e16; --sheet-waste: #2a2519;
   --warn: #d38e64; --warn-soft: #362317;
 }
@@ -264,7 +274,7 @@ h1 { margin: 0; font-size: clamp(28px, 4vw, 38px); font-weight: 800; text-wrap: 
 @media (max-width: 620px) { .summary { grid-template-columns: 1fr; } }
 .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 22px 24px; display: flex; flex-direction: column; gap: 10px; position: relative; overflow: hidden; }
 .tile::before { content: ""; position: absolute; inset-inline-start: 0; top: 0; bottom: 0; width: 5px; background: var(--accent); }
-.tile.misty { --accent: var(--misty); } .tile.brown { --accent: var(--brown); } .tile.reclaimed { --accent: var(--reclaimed); } .tile.glass { --accent: var(--glass); }
+.tile.misty { --accent: var(--misty); } .tile.brown { --accent: var(--brown); } .tile.reclaimed { --accent: var(--reclaimed); } .tile.glass { --accent: var(--glass); } .tile.white { --accent: var(--white); }
 .tile-role { font-size: 13.5px; color: var(--ink-soft); }
 .swatch { display: inline-block; width: 11px; height: 11px; border-radius: 2px; background: var(--accent); margin-inline-end: 6px; vertical-align: -1px; }
 .tile-count { display: flex; align-items: baseline; gap: 8px; }
@@ -282,7 +292,7 @@ h3.sheet-title:first-of-type { margin-top: 0; }
 .table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; }
 table { width: 100%; border-collapse: collapse; font-size: 14.5px; min-width: 560px; }
 thead th { text-align: start; font-weight: 600; font-size: 12.5px; letter-spacing: 0.02em; color: var(--ink-soft); padding: 12px 16px; border-bottom: 1px solid var(--line-strong); }
-thead.misty th { background: var(--misty-soft); } thead.brown th { background: var(--brown-soft); } thead.reclaimed th { background: var(--reclaimed-soft); } thead.glass th { background: var(--glass-soft); }
+thead.misty th { background: var(--misty-soft); } thead.brown th { background: var(--brown-soft); } thead.reclaimed th { background: var(--reclaimed-soft); } thead.glass th { background: var(--glass-soft); } thead.white th { background: var(--white-soft); }
 tbody td { padding: 12px 16px; border-bottom: 1px solid var(--line); }
 tbody tr:last-child td { border-bottom: none; }
 td.dim, th.dim { direction: ltr; text-align: right; }

@@ -31,8 +31,8 @@ else
 	tools/export_bed_gltf.sh
 endif
 
-# Sheet-nesting cut list: dumps the current STYLE/COLOR_SCHEME's panel list
-# twice — once per BOX_SHELL_ALL_NEW scenario (tools/dump_panels.py) — then
+# Sheet-nesting cut list: dumps the current STYLE/color config's panel
+# list twice — once per BOX_SHELL_ALL_NEW scenario (tools/dump_panels.py) — then
 # reports how many sheets of each new-stock color are needed in each
 # scenario (tools/cutlist.py, rectpack) plus the reclaimed-panel list.
 # Requires the project .venv (`pip install -r requirements.txt`).

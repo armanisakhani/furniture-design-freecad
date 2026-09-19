@@ -4,7 +4,9 @@ wardrobe:1") — same nesting logic as tools/cutlist.py (which reports one
 furniture design alone), fed one merged panel list across every ordered
 item instead. Sourced from each entry's own build_item.py output (see
 registry.py), repeated per its own quantity. Metal hardware (handles, the
-wardrobe's rod) is excluded — it's bought, not cut from a sheet.
+wardrobe's rod) and PVC edge-banding tape (furniture/bed's Top panel
+trim) are excluded — both are bought (a fitting, a roll of tape), not cut
+from a sheet.
 
 Plain Python (project's own .venv, not freecadcmd) — see tools/cutlist.py's
 own docstring for why this half of the pipeline doesn't need FreeCAD.
@@ -34,7 +36,7 @@ def load_order_panels(entries):
     combined = []
     for entry in entries:
         with open(item_paths(entry["instance_key"])["panels_json"]) as f:
-            panels = [p for p in json.load(f) if p["material"] != "Metal"]
+            panels = [p for p in json.load(f) if p["material"] not in ("Metal", "PVC")]
         label = FURNITURE[entry["name"]]["label"]
         for instance in range(1, entry["qty"] + 1):
             suffix = f" [{label} #{instance}]" if entry["qty"] > 1 else f" [{label}]"

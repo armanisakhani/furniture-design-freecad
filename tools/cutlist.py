@@ -65,9 +65,10 @@ TRIM_MARGIN = 10  # mm, unusable strip left at each sheet edge
 WHITE_SHEET_SIZE = (1800, 850)
 
 COLOR_NAMES = {
-    (0.31, 0.44, 0.5): "میستی (Misty / Body)",
-    (0.43, 0.35, 0.28): "قهوه‌ای (Brown / Drawer Face)",
+    (0.31, 0.44, 0.5): "میستی (Misty)",
+    (0.43, 0.35, 0.28): "قهوه‌ای (Brown)",
     (0.78, 0.83, 0.85): "شیشه‌ی آینه (Mirror Glass)",
+    (1.0, 1.0, 1.0): "سفید (White)",
 }
 
 
@@ -84,10 +85,11 @@ def group_new_stock(panels):
     """{color_tuple: [{length, width, thickness, qty, labels}]} — panels
     with identical (length, width, thickness) collapse into one row with a
     quantity, since that's what a workshop actually needs (a cut list, not
-    57 separate lines)."""
+    57 separate lines). PVC edge-banding panels are skipped here — bought
+    as a roll of tape, not nested onto sheets like MDF/Fiber board."""
     groups = defaultdict(lambda: defaultdict(lambda: dict(qty=0, labels=[])))
     for p in panels:
-        if p["stock_source"] != "new":
+        if p["stock_source"] != "new" or p.get("material") == "PVC":
             continue
         color = round_color(p["color"])
         key = (round(p["length"], 1), round(p["width"], 1), p["thickness"])

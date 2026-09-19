@@ -54,6 +54,7 @@ HANDLE_WIDTH), sized from box-only Panel primitives like everything else.
 
 import FreeCAD as App
 
+import colors
 import params
 from core.panel import create_assembly_panel, IDENTITY, ROT_X90, ROT_Y90
 
@@ -77,14 +78,14 @@ def create_dresser(doc):
                   visible=True, stock_source="new"):
         # core.panel.create_assembly_panel supplies the stock_source ->
         # color default rule (CONTEXT.md); this module's own colors
-        # (RECLAIMED_MDF_COLOR/BODY_COLOR, from params.py) are passed in.
+        # (colors.REUSED_COLOR/colors.part_rgb("body")) are passed in.
         obj = create_assembly_panel(
             doc, obj_name, label,
             length, width_, thickness, rotation, target_min,
             material=material, color=color, visible=visible,
             stock_source=stock_source,
-            reclaimed_color=params.RECLAIMED_MDF_COLOR,
-            new_color=params.BODY_COLOR,
+            reclaimed_color=colors.REUSED_COLOR,
+            new_color=colors.part_rgb("body"),
         )
         panels.append(obj)
         return obj
@@ -170,7 +171,7 @@ def _add_mirror(add_panel, width, depth):
     y_min = depth - t
     z_min = params.HEIGHT + params.MIRROR_HANG_GAP
 
-    kwargs = dict(color=params.BODY_COLOR, visible=True, stock_source="new")
+    kwargs = dict(color=colors.part_rgb("mirror_frame"), visible=True, stock_source="new")
     add_panel(
         "MirrorTopRail", "Mirror - Top Rail", outer_w, t, bw, IDENTITY,
         App.Vector(x_min, y_min, z_min + outer_h - bw), **kwargs,
@@ -318,13 +319,13 @@ def _add_drawer(add_panel, index, x_min, band_z_min):
         face_height += params.TOP_DRAWER_FACE_EXTRA_HEIGHT
 
     # Face color from DRAWER_COLOR_PATTERN (params.py): one '0'/'1' digit
-    # per drawer, top to bottom — '1' matches BODY_COLOR, '0' is
-    # DRAWER_FRONT_COLOR. index counts from the bottom, so flip it to read
-    # the pattern string from the top.
+    # per drawer, top to bottom — '1' is colors.MAIN_COLOR (matches the
+    # body), '0' is colors.SECOND_COLOR (the accent). index counts from
+    # the bottom, so flip it to read the pattern string from the top.
     from_top = params.DRAWER_COUNT - 1 - index
     face_color = (
-        params.BODY_COLOR if params.DRAWER_COLOR_PATTERN[from_top] == "1"
-        else params.DRAWER_FRONT_COLOR
+        colors.MAIN_COLOR if params.DRAWER_COLOR_PATTERN[from_top] == "1"
+        else colors.SECOND_COLOR
     )
     face_x_min = t + gap_x / 2
     face_z_min = band_z_min + gap_z / 2

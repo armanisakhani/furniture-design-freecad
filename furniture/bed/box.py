@@ -100,20 +100,22 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
     interior_height = params.BOX_INTERIOR_HEIGHT
 
     # BOX_COLOR_BY_POSITION (params.py): every box a single solid color
-    # instead of the usual 2-tone params.BODY_COLOR/DRAWER_FRONT_COLOR —
-    # the single middle box (odd BOX_COUNT, box_index == BOX_COUNT // 2)
-    # gets colors.MIDDLE_BOX_COLOR, the other (side) boxes get
+    # instead of the usual colors.PART_ROLES-driven split — the single
+    # middle box (odd BOX_COUNT, box_index == BOX_COUNT // 2) gets
+    # colors.MIDDLE_BOX_COLOR, the other (side) boxes get
     # colors.SIDE_BOX_COLOR.
     is_middle_box = (
         params.BOX_COUNT % 2 == 1 and box_index == params.BOX_COUNT // 2
     )
     if params.BOX_COLOR_BY_POSITION:
         box_color = colors.MIDDLE_BOX_COLOR if is_middle_box else colors.SIDE_BOX_COLOR
-        body_color = box_color
+        top_color = box_color
+        edge_band_color = box_color
         drawer_front_color = box_color
     else:
-        body_color = params.BODY_COLOR
-        drawer_front_color = params.DRAWER_FRONT_COLOR
+        top_color = colors.part_rgb("box_top")
+        edge_band_color = colors.part_rgb("box_edge_band")
+        drawer_front_color = colors.part_rgb("drawer_face")
 
     panels = []
 
@@ -122,16 +124,16 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
                   visible=True, stock_source="new"):
         # core.panel.create_assembly_panel supplies the stock_source ->
         # color default rule (CONTEXT.md); this box's own colors
-        # (RECLAIMED_MDF_COLOR/BODY_COLOR, from this furniture's params.py)
-        # are passed in — this closure only adds the label_prefix and
-        # appends to this box's own panels list.
+        # (colors.REUSED_COLOR/top_color, from colors.py's PART_ROLES) are
+        # passed in — this closure only adds the label_prefix and appends
+        # to this box's own panels list.
         obj = create_assembly_panel(
             doc, f"{label_prefix}_{obj_name}", f"{label_prefix} - {label}",
             length, width, thickness, rotation, target_min,
             material=material, color=color, visible=visible,
             stock_source=stock_source,
-            reclaimed_color=params.RECLAIMED_MDF_COLOR,
-            new_color=body_color,
+            reclaimed_color=colors.REUSED_COLOR,
+            new_color=top_color,
         )
         panels.append(obj)
         return obj
@@ -139,31 +141,72 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
     # --- Box shell ----------------------------------------------------
     # Bottom: X-footprint BOX_WIDTH, inset by t from FRAME_WIDTH (see module
     # docstring). Top's footprint (BOX_TOP_PANEL_WIDTH/BOX_TOP_X_MIN)
-    # instead varies by DRAWER_STYLE — see params.py.
-    #
-    # DRAWER_OPENING_EDGE_MATCHES_BODY ("inset" only): Bottom and the 2
-    # side walls border the drawer opening once the Face stops reaching out
-    # to cover them, showing a thin sliver of their own front edge — colored
-    # to read as PVC-banded in BODY_COLOR (params.py) instead of their usual
-    # StockSource-based color. Overrides color only, not StockSource/visible
-    # (see params.py's own comment on this).
-    edge_color = body_color if params.DRAWER_OPENING_EDGE_MATCHES_BODY else None
+    # instead varies by DRAWER_STYLE — see params.py. Top is its own role
+    # ("box_top", colors.py) — the box's flat body. Bottom + the 2 side
+    # walls are a separate role ("box_edge_band") — the PVC banding around
+    # the box's own perimeter, per the user: distinct from the box's white
+    # body even though every one of these panels ends up mostly hidden
+    # once assembled (bed.py) — this is about what a viewer would see if
+    # they could see it, not just what's actually exposed.
     shell_panel_width = params.BOX_SHELL_PANEL_WIDTH
     shell_panel_x_min = params.BOX_SHELL_PANEL_X_MIN
     # BOX_SHELL_ALL_NEW (params.py): a cost/logistics toggle, independent of
     # the above — whether Bottom + the 2 side walls are cut from new stock
     # (like Top, always new) instead of reclaimed scrap. Doesn't touch
-    # edge_color/visible/footprint, only which stock they're cut from.
+    # color/visible/footprint, only which stock they're cut from.
     shell_stock_source = "new" if params.BOX_SHELL_ALL_NEW else "reclaimed"
     add_panel(
         "Bottom", "Bottom Panel", shell_panel_width, box_length, t,
         _IDENTITY, App.Vector(shell_panel_x_min, y_offset, 0),
-        color=edge_color, visible=False, stock_source=shell_stock_source,
+        color=edge_band_color, visible=False, stock_source=shell_stock_source,
     )
     add_panel(
         "Top", "Top Panel", params.BOX_TOP_PANEL_WIDTH, box_length, t,
         _IDENTITY, App.Vector(params.BOX_TOP_X_MIN, y_offset, box_height - t),
-        visible=True, stock_source="new",
+        color=top_color, visible=True, stock_source="new",
+    )
+
+    # PVC edge banding around Top's own perimeter — real geometry (unlike
+    # Bottom/the 2 side walls' "box_edge_band" role, a color label only,
+    # since those never actually show), a thin picture-frame border,
+    # PVC_THICKNESS wide, always colored via edge_band_color regardless of
+    # Top's own top_color — the board's face and its edge tape are 2
+    # independent attributes of the same board, per the user. Sits INSET
+    # from Top's own outer edge (overlaying its outermost pvc mm), not
+    # added outside it — real edge banding is glued onto the board's own
+    # cut edge, so a "1800mm-wide" panel is already 1800mm including its
+    # own banding, not 1800mm of MDF plus banding on top (an outward
+    # placement would grow the bed's overall FRAME_WIDTH/FRAME_LENGTH
+    # envelope, which bed_test.py's bounding-box check caught). Raised
+    # TOP_EDGE_BAND_RISE above Top's own top surface — sitting exactly
+    # coplanar with it caused visible striping/z-fighting in the live
+    # FreeCAD view (confirmed, not just a theoretical worry). 4 strips, no
+    # miter (same butt-joint convention as bed.py's MattressStop*): the 2
+    # running along X cover the corners (their own width reaches
+    # box_length), the 2 running along Y just span the interior between them.
+    pvc = params.PVC_THICKNESS
+    top_x_min = params.BOX_TOP_X_MIN
+    top_width = params.BOX_TOP_PANEL_WIDTH
+    top_z_min = box_height - t + params.TOP_EDGE_BAND_RISE
+    add_panel(
+        "TopEdgeBandNear", "Top - PVC Edge Band (Y near)", top_width, pvc, t,
+        _IDENTITY, App.Vector(top_x_min, y_offset, top_z_min),
+        material="PVC", color=edge_band_color, visible=True, stock_source="new",
+    )
+    add_panel(
+        "TopEdgeBandFar", "Top - PVC Edge Band (Y far)", top_width, pvc, t,
+        _IDENTITY, App.Vector(top_x_min, y_offset + box_length - pvc, top_z_min),
+        material="PVC", color=edge_band_color, visible=True, stock_source="new",
+    )
+    add_panel(
+        "TopEdgeBandLeft", "Top - PVC Edge Band (X near)", pvc, box_length - 2 * pvc, t,
+        _IDENTITY, App.Vector(top_x_min, y_offset + pvc, top_z_min),
+        material="PVC", color=edge_band_color, visible=True, stock_source="new",
+    )
+    add_panel(
+        "TopEdgeBandRight", "Top - PVC Edge Band (X far)", pvc, box_length - 2 * pvc, t,
+        _IDENTITY, App.Vector(top_x_min + top_width - pvc, y_offset + pvc, top_z_min),
+        material="PVC", color=edge_band_color, visible=True, stock_source="new",
     )
 
     # 2 long side walls: thin along Y, trapped between top/bottom (Z), at
@@ -174,12 +217,12 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
     add_panel(
         "SideWallNear", "Side Wall (Y near)", shell_panel_width, interior_height, t,
         _ROT_X90, App.Vector(shell_panel_x_min, y_offset, t),
-        color=edge_color, visible=False, stock_source=shell_stock_source,
+        color=edge_band_color, visible=False, stock_source=shell_stock_source,
     )
     add_panel(
         "SideWallFar", "Side Wall (Y far)", shell_panel_width, interior_height, t,
         _ROT_X90, App.Vector(shell_panel_x_min, y_offset + box_length - t, t),
-        color=edge_color, visible=False, stock_source=shell_stock_source,
+        color=edge_band_color, visible=False, stock_source=shell_stock_source,
     )
 
     # --- Drawer_box carcasses ------------------------------------------

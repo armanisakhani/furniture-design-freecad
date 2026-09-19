@@ -11,6 +11,7 @@ the Y=0 face), Z = height, floor at Z=0. See params.py for LAYOUT.
 
 import FreeCAD as App
 
+import colors
 import params
 from core.panel import create_assembly_panel, IDENTITY, ROT_X90, ROT_Y90
 
@@ -31,8 +32,8 @@ def _make_add_panel(doc, panels):
             length, width_, thickness, rotation, target_min,
             material=material, color=color, visible=visible,
             stock_source=stock_source,
-            reclaimed_color=params.RECLAIMED_MDF_COLOR,
-            new_color=params.BODY_COLOR,
+            reclaimed_color=colors.REUSED_COLOR,
+            new_color=colors.part_rgb("body"),
         )
         panels.append(obj)
         return obj
@@ -153,12 +154,12 @@ def _create_two_piece(doc):
         # Front edge sits exposed at the seam between the 2 freestanding
         # units (LAYOUT="two_piece" only — one_piece's analogous "Divider"
         # panel is already visible=True/new for the same reason), so it's
-        # colored to match the body even though it's cut from reclaimed
-        # stock — same edge-color-override pattern as bed/box.py's
-        # DRAWER_OPENING_EDGE_MATCHES_BODY (see CONTEXT.md).
+        # colored to match the body (colors.part_rgb("body")) even though
+        # it's cut from reclaimed stock — a deliberate color override, same
+        # idea as furniture/bed's box_edge_band role (see CONTEXT.md).
         "HangingBottom", "Hanging Unit - Bottom", width, depth, t,
         IDENTITY, App.Vector(0, 0, base_z),
-        color=params.BODY_COLOR, visible=False, stock_source="reclaimed",
+        color=colors.part_rgb("body"), visible=False, stock_source="reclaimed",
     )
     add_panel(
         "HangingLeft", "Hanging Unit - Left Side", hanging_side_height, depth, t,
@@ -381,8 +382,8 @@ def _add_drawer(add_panel, index, x_min, band_z_min):
 
     from_top = params.DRAWER_COUNT - 1 - index
     face_color = (
-        params.BODY_COLOR if params.DRAWER_COLOR_PATTERN[from_top] == "1"
-        else params.DRAWER_FRONT_COLOR
+        colors.MAIN_COLOR if params.DRAWER_COLOR_PATTERN[from_top] == "1"
+        else colors.SECOND_COLOR
     )
     face_x_min = t + gap_x / 2
     face_z_min = band_z_min + gap_z / 2

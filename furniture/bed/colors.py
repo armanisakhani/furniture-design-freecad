@@ -1,11 +1,20 @@
 """
-Named color swatches (references/colors/) and selectable palettes, so
-different body/drawer-front color combinations can be previewed without
-hand-editing params.py. Mirrors the STYLES pattern in params.py: pick a
-palette with the COLOR_SCHEME env var, e.g. `COLOR_SCHEME=charcoal_front
-make test-bed`. BODY_SWATCH/DRAWER_FRONT_SWATCH can each still override
-one role individually on top of a selected palette, same as STYLE's own
-per-knob overrides.
+Named color swatches (references/colors/) and the 3 shared color roles
+every furniture/ module understands the same way (see docs/CONTEXT.md):
+  * main   — MAIN_COLOR env var, default "misty". The structural/trim
+    color (see PART_ROLES below for which parts use it).
+  * second — SECOND_COLOR env var, default "white". The accent color.
+  * reused — REUSED_MDF_COLOR env var, default "white". What reclaimed/
+    hidden panels get, regardless of main/second (core/panel.py's own
+    stock_source convention picks this automatically — no PART_ROLES
+    entry needed for it).
+Same 3 names/env vars in furniture/dresser and furniture/wardrobe's own
+colors.py, so one ORDER entry format works for every furniture/ item,
+e.g. `bed:1:MAIN_COLOR=misty;SECOND_COLOR=white`.
+
+PART_ROLES is the single place that answers "what color is X" — box.py/
+bed.py look up a part's role here and resolve it with part_rgb(), instead
+of deciding colors ad hoc at each call site.
 """
 
 import os
@@ -21,27 +30,6 @@ SWATCHES = {
     "anthracite": dict(code=1129, rgb=(0.38, 0.37, 0.36)),  # 1129-anthracite.png
 }
 
-# --- Palettes: which swatch plays which role ----------------------------
-# "body" -> BODY_COLOR (Box body panels, e.g. Top), "drawer_front" ->
-# DRAWER_FRONT_COLOR (the Drawer_box Face/نما panel only). Add an entry
-# here for a new combination to try.
-PALETTES = {
-    "default": dict(body="misty", drawer_front="brown"),
-    "charcoal_front": dict(body="misty", drawer_front="anthracite"),
-}
-
-
-def _resolve_palette():
-    name = os.environ.get("COLOR_SCHEME") or "default"
-    if name not in PALETTES:
-        raise ValueError(f"Unknown COLOR_SCHEME={name!r}; known: {sorted(PALETTES)}")
-    palette = dict(PALETTES[name])
-    if os.environ.get("BODY_SWATCH"):
-        palette["body"] = os.environ["BODY_SWATCH"]
-    if os.environ.get("DRAWER_FRONT_SWATCH"):
-        palette["drawer_front"] = os.environ["DRAWER_FRONT_SWATCH"]
-    return palette
-
 
 def swatch_rgb(name):
     if name not in SWATCHES:
@@ -49,17 +37,58 @@ def swatch_rgb(name):
     return SWATCHES[name]["rgb"]
 
 
-_palette = _resolve_palette()
+# --- The 3 shared roles ---------------------------------------------------
+MAIN_COLOR = swatch_rgb(os.environ.get("MAIN_COLOR") or "misty")
+SECOND_COLOR = swatch_rgb(os.environ.get("SECOND_COLOR") or "white")
+REUSED_COLOR = swatch_rgb(os.environ.get("REUSED_MDF_COLOR") or "white")
 
-BODY_COLOR = swatch_rgb(_palette["body"])
-DRAWER_FRONT_COLOR = swatch_rgb(_palette["drawer_front"])
+_ROLE_COLOR = {"main": MAIN_COLOR, "second": SECOND_COLOR, "reused": REUSED_COLOR}
+
+
+def role_rgb(role):
+    if role not in _ROLE_COLOR:
+        raise ValueError(f"Unknown color role {role!r}; known: {sorted(_ROLE_COLOR)}")
+    return _ROLE_COLOR[role]
+
+
+# --- Which part uses which role -------------------------------------------
+# The user's own part/color breakdown: box_top (box.py's Top panel — the
+# box's own flat MDF body) and drawer_face (the Face/نما) are "second"
+# (white). box_edge_band is its own, independent role, always "main"
+# (misty) — real PVC edge-banding tape glued around the box's cut edges
+# (box.py models this as actual thin frame geometry around Top's own
+# perimeter, not just a color label on Bottom/the 2 side walls, which
+# stay hidden/color-label-only since they're never actually visible).
+# headboard/end_face_foot/mattress_stop (bed.py) are also "main" — the
+# crown/trim group PVC banding matches. The key point, per the user: a
+# board's face color and its edge-band color are 2 independent
+# attributes of the SAME board, not a body-vs-edge choice — box_top can
+# change without ever touching box_edge_band, and vice versa. Edit here
+# to move a part to a different role — nothing else needs to change.
+PART_ROLES = {
+    "box_top": "second",
+    "box_edge_band": "main",
+    "drawer_face": "second",
+    "headboard": "main",
+    "end_face_foot": "main",
+    "mattress_stop": "main",
+}
+
+
+def part_rgb(part):
+    if part not in PART_ROLES:
+        raise ValueError(f"Unknown part {part!r}; known: {sorted(PART_ROLES)}")
+    return role_rgb(PART_ROLES[part])
+
 
 # --- Position swatches: one solid color per box, by position -----------
-# An alternative to the body/drawer_front split above: instead of each box
-# having a 2-tone body/front, every box is a single solid color, and that
-# color depends on the box's position — the middle box one color, the 2
-# side boxes another (e.g. a misty middle box between 2 solid-brown side
-# boxes). Turned on via BOX_COLOR_BY_POSITION (params.py, set per STYLE).
+# An alternative to the box_top/box_edge_band/drawer_face split above:
+# instead of each box having a 2-tone body/front, every box is a single
+# solid color, and that color depends on the box's position — the middle
+# box one color, the 2 side boxes another (e.g. a misty middle box between
+# 2 solid-brown side boxes). Turned on via BOX_COLOR_BY_POSITION
+# (params.py, set per STYLE) — a distinct feature from PART_ROLES above,
+# not part of the main/second/reused vocabulary.
 POSITION_SWATCHES = dict(middle="misty", side="brown")
 
 

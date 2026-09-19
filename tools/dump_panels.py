@@ -1,13 +1,14 @@
 """
-Dumps every Panel object of the current bed assembly (params.py's
-STYLE/COLOR_SCHEME env vars select the variant, same as test-bed/view-bed)
-to a plain JSON file — Label, Length/Width/Thickness (mm), Material,
-StockSource, PanelColor. No FreeCAD-specific data in the output, so
-tools/cutlist.py (a separate, plain-Python script) can consume it without
-needing freecadcmd/FreeCAD itself.
+Dumps every Panel object of the current bed assembly (params.py's STYLE
+env var, colors.py's MAIN_COLOR/SECOND_COLOR/REUSED_MDF_COLOR — select
+the variant, same as test-bed/view-bed) to a plain JSON file — Label,
+Length/Width/Thickness (mm), Material, StockSource, PanelColor. No
+FreeCAD-specific data in the output, so tools/cutlist.py (a separate,
+plain-Python script) can consume it without needing freecadcmd/FreeCAD
+itself.
 
 Run with freecadcmd (see tools/dump_panels.sh):
-    STYLE=5 COLOR_SCHEME=charcoal_front tools/dump_panels.sh
+    STYLE=5 MAIN_COLOR=brown tools/dump_panels.sh
 """
 
 import json

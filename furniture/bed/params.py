@@ -12,8 +12,6 @@ never inline in geometry code, once the real number is known.
 
 import os
 
-import colors
-
 # --- Style presets ----------------------------------------------------
 # Bundles the handful of parameters that vary together for a design
 # variant, so switching variants is one env var instead of hand-editing
@@ -27,6 +25,10 @@ import colors
 # Any knob can still be overridden on top of the selected style with its
 # own same-named env var (wins over the style's value):
 # `DRAWER_STYLE=inset`, `MATTRESS_TO_FRAME_GAP_WIDTH=50`, `HAS_LEG_FRAME=0`.
+#
+# Color is NOT one of these knobs — it's fully independent of geometry
+# STYLE (any STYLE pairs with any color), driven entirely by colors.py's
+# own MAIN_COLOR/SECOND_COLOR/REUSED_MDF_COLOR + PART_ROLES. See colors.py.
 STYLES = {
     1: dict(drawer_style="inset", mattress_gap_width=0, has_leg_frame=False, box_color_by_position=False),
     2: dict(drawer_style="inset", mattress_gap_width=100, has_leg_frame=False, box_color_by_position=False),
@@ -112,6 +114,13 @@ BOX_HEIGHT = BOX_INTERIOR_HEIGHT + 2 * MDF_THICKNESS
 # geometry. Reconciles the reference photos' ~20mm apparent wall
 # thickness: MDF_THICKNESS (16) + 2 * PVC_THICKNESS (2 + 2) = 20.
 PVC_THICKNESS = 2
+
+# How far box.py's Top-panel PVC edge-band strips sit above Top's own top
+# surface — confirmed necessary (not just theoretical): sitting exactly
+# coplanar caused visible striping/z-fighting between the 2 surfaces in
+# the live FreeCAD view, per the user. 1mm is enough margin to read
+# cleanly there while staying visually negligible at furniture scale.
+TOP_EDGE_BAND_RISE = 1
 
 # Whether the Box shell's Bottom + 2 long side walls are cut from new stock
 # too (same as the Top panel, which is always new — it bears the mattress)
@@ -246,8 +255,8 @@ def _drawer_style_geometry(style):
             # > 0 already tucks the mattress in short of BOX_WIDTH anyway —
             # caught once STYLE=4 set that gap to 0). Bottom and the 2 side
             # walls stay inset (BOX_WIDTH) regardless — they don't bear the
-            # mattress, and their now-visible edge is the intended frame
-            # around the recessed drawer (DRAWER_OPENING_EDGE_MATCHES_BODY).
+            # mattress, and their now-visible edge frames the recessed
+            # drawer (colors.py's "box_edge_band" role).
             top_panel_width=FRAME_WIDTH,
             top_x_min=0,
             drawer_height_reduction=MDF_THICKNESS,
@@ -304,21 +313,8 @@ DRAWER_FRONT_SETBACK = _drawer_geometry["front_setback"]
 # Whether the Face protrudes past the shell ("overlay_over_box"/
 # "overlay_under_box") or lands flush with it ("inset"). Used by box.py to
 # pick Face sizing (carcass-driven vs. box-opening-driven) and by
-# HAS_DRAWER_SIDE_SKIRT/DRAWER_OPENING_EDGE_MATCHES_BODY below.
+# HAS_DRAWER_SIDE_SKIRT below.
 DRAWER_FRONT_IS_OVERLAY = _drawer_geometry["front_is_overlay"]
-
-# "inset" style only: the box shell panels bordering the drawer opening
-# (Bottom, the 2 side walls — Top is already always visible/new) show a
-# thin sliver of their own front-facing cut edge around the Face once the
-# Face stops reaching out to cover them (see box.py's add_drawer and
-# create_box). That edge would carry PVC banding (see CONTEXT.md) to hide
-# the raw MDF core — modeled here as a color override only (no separate
-# PVC panel object), so it reads as banded to match BODY_COLOR instead of
-# showing each panel's own StockSource-based color (their usual
-# RECLAIMED_MDF_COLOR/white). Does not change StockSource/PanelVisible —
-# only a thin edge is actually visible, not the whole panel's face, so
-# there's no reason to re-source the whole board as new stock.
-DRAWER_OPENING_EDGE_MATCHES_BODY = not DRAWER_FRONT_IS_OVERLAY
 
 # Drawer slide rail. Reference notes a 600 or 650mm nominal rail; exact
 # model/brand and its datasheet clearance are not chosen yet.
@@ -412,25 +408,16 @@ FLOOR_Z = -LEG_FRAME_HEIGHT if HAS_LEG_FRAME else 0
 HEADBOARD_HEIGHT = 1100  # confirmed: 1.1m total, floor to top edge
 
 # --- Material / appearance -----------------------------------------------
-# Color is driven by StockSource first, then role. Any panel with
-# StockSource == "reclaimed" (see docs/CONTEXT.md's visible/stock_source
-# concept) always gets RECLAIMED_MDF_COLOR, regardless of its role —
-# these are hidden panels cut from leftover stock, so their finish only
-# matters for being visually distinct in the model. New-stock, visible
-# panels get a role-specific color instead:
-#   * BODY_COLOR: new-stock Box body panels (currently just the Top panel)
-#   * DRAWER_FRONT_COLOR: the Drawer_box's Face (نما) panel only
-# A Face never carries the body color, and no other panel carries the
-# Face's color.
-#
-# BODY_COLOR/DRAWER_FRONT_COLOR come from colors.py, which selects a named
-# swatch per role (e.g. "misty" body + "brown" front) rather than a raw RGB
-# here — see colors.py to try a different combination (COLOR_SCHEME env
-# var), e.g. `COLOR_SCHEME=charcoal_front`.
-RECLAIMED_MDF_COLOR = colors.swatch_rgb("white")
-
-BODY_COLOR = colors.BODY_COLOR
-DRAWER_FRONT_COLOR = colors.DRAWER_FRONT_COLOR
+# Color is driven by StockSource first, then role (docs/CONTEXT.md). Any
+# panel with StockSource == "reclaimed" always gets colors.REUSED_COLOR,
+# regardless of its role — these are hidden panels cut from leftover
+# stock, so their finish only matters for being visually distinct in the
+# model. New-stock, visible panels get a per-part role instead (colors.py's
+# PART_ROLES — "box_top"/"box_edge_band"/"drawer_face"/"headboard"/
+# "end_face_foot"/"mattress_stop", each resolved to main/second via
+# colors.part_rgb()) — box.py/bed.py call that directly, nothing is
+# re-exposed here; see colors.py to change a part's role or override a
+# role's actual color (MAIN_COLOR/SECOND_COLOR/REUSED_MDF_COLOR env vars).
 
 WOOD_COLOR = (0.76, 0.60, 0.42)  # decorative wood-toned panels, if used
 RAIL_COLOR = (0.5, 0.5, 0.5)   # metal rails / hardware

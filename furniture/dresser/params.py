@@ -53,18 +53,16 @@ import colors
 
 # --- Style presets ----------------------------------------------------
 # Mirrors furniture/bed/params.py's STYLES pattern: select with the STYLE
-# env var, e.g. `STYLE=2 make view-dresser`. main_color names which of
-# colors.COLOR_PAIR is the body color — the other one becomes the drawer
-# accent color automatically (see MAIN_COLOR/ALTERNATE_COLOR below).
-# Style 1 is today's default (body brown, drawer fronts misty); style 2
-# swaps the 2 roles (body misty, drawer fronts brown). Style 3 also
-# alternates each drawer's own Face between the 2 colors instead of every
-# Face sharing one (see DRAWER_COLOR_PATTERN below). Both main_color and
-# drawer_color_pattern can still be overridden on top of the selected
-# style with their own same-named env var (MAIN_COLOR /
-# DRAWER_COLOR_PATTERN), same as STYLE's own per-knob overrides.
+# env var, e.g. `STYLE=2 make view-dresser`. Color is NOT one of these
+# knobs (same as furniture/bed) — it's fully independent of geometry
+# STYLE, driven entirely by colors.py's own MAIN_COLOR/SECOND_COLOR/
+# REUSED_MDF_COLOR + PART_ROLES, plus DRAWER_COLOR_PATTERN below (still a
+# STYLES knob, since which drawer gets which of the 2 colors IS a
+# geometry-adjacent layout choice). drawer_color_pattern can still be
+# overridden on top of the selected style with its own same-named env var
+# (DRAWER_COLOR_PATTERN), same as STYLE's own per-knob overrides.
 STYLES = {
-    1: dict(main_color="misty", drawer_color_pattern="1000"),
+    1: dict(drawer_color_pattern="0111"),
 }
 
 
@@ -73,8 +71,6 @@ def _resolve_style():
     if style_id not in STYLES:
         raise ValueError(f"Unknown STYLE={style_id}; known styles: {sorted(STYLES)}")
     values = dict(STYLES[style_id])
-    if os.environ.get("MAIN_COLOR"):
-        values["main_color"] = os.environ["MAIN_COLOR"]
     if os.environ.get("DRAWER_COLOR_PATTERN"):
         values["drawer_color_pattern"] = os.environ["DRAWER_COLOR_PATTERN"]
     return values
@@ -82,21 +78,14 @@ def _resolve_style():
 
 _style = _resolve_style()
 
-# The body color, named directly (e.g. "brown" or "misty") instead of a
-# reverse-from-default boolean — per the user's own suggestion. Whichever
-# of colors.COLOR_PAIR isn't MAIN_COLOR becomes ALTERNATE_COLOR (the
-# drawer accent) automatically.
-MAIN_COLOR = _style["main_color"]
-if MAIN_COLOR not in colors.COLOR_PAIR:
-    raise ValueError(f"Unknown MAIN_COLOR={MAIN_COLOR!r}; must be one of {colors.COLOR_PAIR}")
-ALTERNATE_COLOR = next(c for c in colors.COLOR_PAIR if c != MAIN_COLOR)
-
-# Per-drawer Face color, top to bottom, one digit per drawer: '1' = same
-# as BODY_COLOR (MAIN_COLOR), '0' = the opposite (DRAWER_FRONT_COLOR /
-# ALTERNATE_COLOR) — e.g. "1000" means the topmost drawer matches the
-# body, the other 3 don't. Per the user's own suggested config format.
-# Length must match DRAWER_COUNT (checked below, once DRAWER_COUNT is
-# known). See dresser.py's _add_drawer.
+# Per-drawer Face color, top to bottom, one digit per drawer: '1' = main
+# (colors.MAIN_COLOR, same as the body), '0' = second (colors.SECOND_COLOR,
+# the accent) — e.g. "1000" means the topmost drawer matches the body, the
+# other 3 don't. Per the user's own suggested config format, preserved
+# unchanged by the main/second/reused refactor — this is a distinct,
+# per-instance color pick layered on top of colors.py's PART_ROLES, not
+# replaced by it. Length must match DRAWER_COUNT (checked below, once
+# DRAWER_COUNT is known). See dresser.py's _add_drawer.
 DRAWER_COLOR_PATTERN = _style["drawer_color_pattern"]
 
 # --- Overall footprint ---------------------------------------------------
@@ -305,13 +294,10 @@ else:  # "on_top"
 # --- Material / appearance -----------------------------------------------
 # Same visible/stock_source convention as furniture/bed (see
 # docs/CONTEXT.md): panels visible in the finished piece are new stock,
-# hidden ones are reclaimed. Per the user's brief: body (carcass) brown,
-# drawer fronts (درها) misty (STYLE=1); every drawer's own hidden carcass
-# is reclaimed MDF with a separate (fiber) bottom board; every visible
-# Face is always new stock regardless of what's reclaimed elsewhere.
-RECLAIMED_MDF_COLOR = colors.swatch_rgb("white")
-BODY_COLOR = colors.swatch_rgb(MAIN_COLOR)
-DRAWER_FRONT_COLOR = colors.swatch_rgb(ALTERNATE_COLOR)
+# hidden ones are reclaimed. Color itself is NOT re-exposed here —
+# dresser.py imports colors directly and reads colors.MAIN_COLOR/
+# colors.SECOND_COLOR/colors.REUSED_COLOR/colors.part_rgb("body") (see
+# colors.py's PART_ROLES for which part uses which role).
 
 # --- Mirror (آینه, optional) -----------------------------------------------
 # Wall-mounted, built as part of this same dresser (not a separate

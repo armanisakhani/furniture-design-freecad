@@ -33,15 +33,19 @@ import os
 import colors
 
 # --- Style presets ----------------------------------------------------
-# Select with the STYLE env var. main_color names which of colors.COLOR_PAIR
-# is the body color; the other becomes the drawer/door accent automatically.
-# color_pattern is "<door digit>_<drawer pattern>", e.g. "1_1000": the
-# digit before "_" picks the doors' color (same '1'=body/'0'=accent
-# convention as the drawer pattern after it, one digit per drawer top to
-# bottom). layout is one of LAYOUT's own 2 values (see below).
+# Select with the STYLE env var. Color is NOT one of these knobs (same as
+# furniture/bed/furniture/dresser) — it's fully independent of geometry
+# STYLE, driven entirely by colors.py's own MAIN_COLOR/SECOND_COLOR/
+# REUSED_MDF_COLOR + PART_ROLES, plus color_pattern below (still a STYLES
+# knob, since which door/drawer gets which of the 2 colors IS a
+# geometry-adjacent layout choice). color_pattern is "<door digit>_<drawer
+# pattern>", e.g. "1_1000": the digit before "_" picks the doors' color
+# (same '1'=main/'0'=second convention as the drawer pattern after it, one
+# digit per drawer top to bottom). layout is one of LAYOUT's own 2 values
+# (see below).
 STYLES = {
-    1: dict(main_color="misty", color_pattern="0_1111", layout="two_piece"),
-    2: dict(main_color="misty", color_pattern="0_1111", layout="one_piece"),
+    1: dict(color_pattern="1_0111", layout="two_piece"),
+    2: dict(color_pattern="0_1111", layout="one_piece"),
 }
 
 
@@ -50,8 +54,6 @@ def _resolve_style():
     if style_id not in STYLES:
         raise ValueError(f"Unknown STYLE={style_id}; known styles: {sorted(STYLES)}")
     values = dict(STYLES[style_id])
-    if os.environ.get("MAIN_COLOR"):
-        values["main_color"] = os.environ["MAIN_COLOR"]
     if os.environ.get("COLOR_PATTERN"):
         values["color_pattern"] = os.environ["COLOR_PATTERN"]
     if os.environ.get("LAYOUT"):
@@ -60,11 +62,6 @@ def _resolve_style():
 
 
 _style = _resolve_style()
-
-MAIN_COLOR = _style["main_color"]
-if MAIN_COLOR not in colors.COLOR_PAIR:
-    raise ValueError(f"Unknown MAIN_COLOR={MAIN_COLOR!r}; must be one of {colors.COLOR_PAIR}")
-ALTERNATE_COLOR = next(c for c in colors.COLOR_PAIR if c != MAIN_COLOR)
 
 _door_digit, DRAWER_COLOR_PATTERN = _style["color_pattern"].split("_")
 if _door_digit not in "01":
@@ -212,7 +209,15 @@ SIDE_SHELF_BRACKET_WIDTH = 25
 SIDE_SHELF_BRACKET_THICKNESS = 2
 
 # --- Material / appearance -----------------------------------------------
-RECLAIMED_MDF_COLOR = colors.swatch_rgb("white")
-BODY_COLOR = colors.swatch_rgb(MAIN_COLOR)
-DRAWER_FRONT_COLOR = colors.swatch_rgb(ALTERNATE_COLOR)
-DOOR_COLOR = BODY_COLOR if DOOR_COLOR_DIGIT == "1" else DRAWER_FRONT_COLOR
+# Body/reclaimed color are NOT re-exposed here — wardrobe.py imports
+# colors directly and reads colors.MAIN_COLOR/colors.SECOND_COLOR/
+# colors.REUSED_COLOR/colors.part_rgb("body"). DOOR_COLOR is the one
+# color still computed here, since it depends on DOOR_COLOR_DIGIT (above):
+# '1' is colors.MAIN_COLOR (matches the body), '0' is colors.SECOND_COLOR
+# (the accent).
+DOOR_COLOR = colors.MAIN_COLOR if DOOR_COLOR_DIGIT == "1" else colors.SECOND_COLOR
+# Independent door-color override — e.g. `DOOR_SWATCH=white` — for a door
+# color that isn't just "whichever of main/second DOOR_COLOR_DIGIT picks"
+# but a third, unrelated swatch (any SWATCHES name).
+if os.environ.get("DOOR_SWATCH"):
+    DOOR_COLOR = colors.swatch_rgb(os.environ["DOOR_SWATCH"])
