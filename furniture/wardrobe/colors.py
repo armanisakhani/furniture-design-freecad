@@ -21,6 +21,9 @@ SWATCHES = {
     "white": (1.0, 1.0, 1.0),
     "brown": (0.43, 0.35, 0.28),  # matches furniture/bed's "brown" (1126)
     "misty": (0.31, 0.44, 0.50),  # matches furniture/bed's "misty" (1128)
+    "cuppuccino": (0.59, 0.52, 0.48),  # matches furniture/bed's "cuppuccino" (1123)
+    "pearl": (0.97, 0.97, 0.96),  # matches furniture/bed's "pearl" (1124)
+    "shale-gray": (0.79, 0.78, 0.79),  # matches furniture/bed's "shale-gray" (1134)
     "metal": (0.55, 0.55, 0.57),  # brushed-steel look, for the drawer handles/rod
 }
 

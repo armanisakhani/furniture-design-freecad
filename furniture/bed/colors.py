@@ -28,6 +28,9 @@ SWATCHES = {
     "misty": dict(code=1128, rgb=(0.31, 0.44, 0.50)),  # 1128-misty.jpg
     "brown": dict(code=1126, rgb=(0.43, 0.35, 0.28)),  # 1126-brown.jpg
     "anthracite": dict(code=1129, rgb=(0.38, 0.37, 0.36)),  # 1129-anthracite.png
+    "cuppuccino": dict(code=1123, rgb=(0.59, 0.52, 0.48)),  # 1123-cuppuccino.jpeg
+    "pearl": dict(code=1124, rgb=(0.97, 0.97, 0.96)),  # 1124-pearl.jpeg
+    "shale-gray": dict(code=1134, rgb=(0.79, 0.78, 0.79)),  # 1134-shale-gray.jpg
 }
 
 

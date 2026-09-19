@@ -1,0 +1,20 @@
+# main: misty, second: brown — see furniture/*/example.yaml for every
+# other overridable parameter, and furniture/*/styles.yaml for style names.
+#
+# View: tools/order.sh misty_brown
+# Cutlist report: tools/order.sh misty_brown --report
+
+colors:
+  main: misty
+  second: brown
+
+items:
+  - furniture: bed
+    qty: 1
+  - furniture: dresser
+    qty: 1
+    drawer_color_pattern: "0111"
+  - furniture: wardrobe
+    qty: 1
+    style: two-piece
+    color_pattern: "1_0111"
