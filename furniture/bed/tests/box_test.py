@@ -62,14 +62,12 @@ def main():
     # Z=0 (no drawer-side skirt, see CONTEXT.md).
     expected_xmin, expected_xmax = 0, params.FRAME_WIDTH
     expected_zmin = -params.SKIRT_HEIGHT if params.DRAWER_FRONT_IS_OVERLAY else 0
-    # zmax includes TOP_EDGE_BAND_RISE — the Top panel's own PVC edge-band
-    # strips sit that much above its top surface (see box.py's create_box).
     verify_footprint(
         "box_test", panels,
         expected=dict(
             xmin=expected_xmin, xmax=expected_xmax,
             ymin=0, ymax=params.BOX_LENGTH,
-            zmin=expected_zmin, zmax=params.BOX_HEIGHT + params.TOP_EDGE_BAND_RISE,
+            zmin=expected_zmin, zmax=params.BOX_HEIGHT,
         ),
     )
 

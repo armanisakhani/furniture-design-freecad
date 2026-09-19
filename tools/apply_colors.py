@@ -26,6 +26,20 @@ else:
     for obj in doc.Objects:
         if hasattr(obj, "PanelColor") and obj.ViewObject is not None:
             obj.ViewObject.ShapeColor = obj.PanelColor
+            # EdgeColor (core/panel.py) colors just the panel's own 4
+            # perimeter/cut-edge faces (e.g. PVC edge-banding), independent
+            # of PanelColor's single ShapeColor — set as a per-face
+            # DiffuseColor instead, relying on Part.makeBox's own stable
+            # face order (Faces[0:4] = the 4 side faces, Faces[4:6] = the
+            # 2 big flat faces — see EdgeColor's own docstring). Skipped
+            # when EdgeColor matches PanelColor (the common case — most
+            # panels have no independent edge treatment), so ShapeColor's
+            # own single-color rendering is left untouched for those.
+            if hasattr(obj, "EdgeColor") and hasattr(obj, "Shape"):
+                edge_rgba = tuple(obj.EdgeColor)
+                panel_rgba = tuple(obj.PanelColor)
+                if edge_rgba != panel_rgba and len(obj.Shape.Faces) == 6:
+                    obj.ViewObject.DiffuseColor = [edge_rgba] * 4 + [panel_rgba] * 2
             count += 1
     doc.recompute()
     print(f"Applied PanelColor to {count} object(s) in '{doc.Name}'.")

@@ -60,6 +60,25 @@ class Panel:
                 "params.py. Not yet wired to ViewObject.ShapeColor "
                 "(deferred to Phase 9).",
             ).PanelColor = (1.0, 1.0, 1.0)
+        if not hasattr(obj, "EdgeColor"):
+            obj.addProperty(
+                "App::PropertyColor", "EdgeColor", "Panel",
+                "Finish color for just this panel's own 4 perimeter/cut-edge "
+                "faces (e.g. PVC edge-banding tape) — the board's face and "
+                "its edge tape are 2 independent attributes of the same "
+                "board. Defaults to PanelColor's own value (see "
+                "create_panel), so a panel with no independent edge "
+                "treatment still renders as one uniform color. Applied via "
+                "ViewObject.DiffuseColor (per-face), not PanelColor's own "
+                "single ShapeColor — see tools/apply_colors.py. Relies on "
+                "Part.makeBox's own stable face order: Faces[0:4] are the "
+                "4 side faces at the Length/Width extremes (the cut edges "
+                "around the panel's own perimeter), Faces[4:6] are the 2 "
+                "big flat faces at the Thickness extremes (confirmed "
+                "empirically, not officially documented by FreeCAD, but a "
+                "basic property of how OCC's box primitive is built, "
+                "unlikely to change).",
+            ).EdgeColor = (1.0, 1.0, 1.0)
         if not hasattr(obj, "PanelVisible"):
             obj.addProperty(
                 "App::PropertyBool", "PanelVisible", "Fabrication",
@@ -92,11 +111,14 @@ def create_panel(
     thickness,
     material="MDF",
     color=(1.0, 1.0, 1.0),
+    edge_color=None,
     visible=True,
     stock_source="new",
 ):
     """Add one Panel FeaturePython object to doc and set its properties from
-    params.py values (never pass literals in from geometry code)."""
+    params.py values (never pass literals in from geometry code). edge_color
+    (see Panel's own EdgeColor property) defaults to matching `color` — a
+    single uniform color — when not given its own independent value."""
     obj = doc.addObject("Part::FeaturePython", obj_name)
     Panel(obj)
     obj.Label = label
@@ -105,6 +127,7 @@ def create_panel(
     obj.Thickness = thickness
     obj.Material = material
     obj.PanelColor = color
+    obj.EdgeColor = edge_color if edge_color is not None else color
     obj.PanelVisible = visible
     obj.StockSource = stock_source
     return obj
@@ -121,6 +144,7 @@ def create_assembly_panel(
     target_min,
     material="MDF",
     color=None,
+    edge_color=None,
     visible=True,
     stock_source="new",
     reclaimed_color=None,
@@ -137,7 +161,7 @@ def create_assembly_panel(
         color = reclaimed_color if stock_source == "reclaimed" else new_color
     obj = create_panel(
         doc, obj_name, label, length, width, thickness,
-        material=material, color=color, visible=visible,
+        material=material, color=color, edge_color=edge_color, visible=visible,
         stock_source=stock_source,
     )
     place_panel(doc, obj, rotation, target_min)
