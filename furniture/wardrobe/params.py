@@ -75,7 +75,7 @@ if LAYOUT not in ("one_piece", "two_piece"):
     raise ValueError(f"Unknown LAYOUT={LAYOUT!r}; must be 'one_piece' or 'two_piece'")
 
 # --- Overall footprint ---------------------------------------------------
-WIDTH = 800  # TBD
+WIDTH = int(os.environ.get("WIDTH") or 800)  # TBD default; override via an order item's own `width:` key
 DEPTH = 550  # confirmed: matches furniture/dresser's own DEPTH
 MDF_THICKNESS = 16  # confirmed: same board as furniture/bed and furniture/dresser
 DRAWER_BOTTOM_THICKNESS = 3

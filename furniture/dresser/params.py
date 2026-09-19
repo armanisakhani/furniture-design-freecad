@@ -97,7 +97,7 @@ DRAWER_COLOR_PATTERN = _style["drawer_color_pattern"]
 # --- Overall footprint ---------------------------------------------------
 # X = WIDTH (left-right), Y = DEPTH (front-back). Every drawer opens from
 # the Y=0 face. Z = height, floor at Z=0.
-WIDTH = 900  # confirmed
+WIDTH = int(os.environ.get("WIDTH") or 900)  # confirmed default; override via an order item's own `width:` key
 DEPTH = 550  # confirmed: matches furniture/wardrobe's own DEPTH
 
 # --- Material --------------------------------------------------------
@@ -329,7 +329,10 @@ else:  # "on_top"
 # portrait mirror proportion, not derived from the dresser. Frame border
 # narrower than the ~50-75mm standard range, per the user's own request
 # (looked too heavy stacked visually right above the dresser).
-HAS_MIRROR = bool(int(os.environ.get("HAS_MIRROR", "0")))
+# Tolerant truthy check (not int(), which chokes on "True"/"False" — an
+# order item's own `has_mirror: true` YAML boolean stringifies to exactly
+# that, not "1"/"0"), same convention as furniture/bed's HAS_LEG_FRAME.
+HAS_MIRROR = os.environ.get("HAS_MIRROR", "0") not in ("0", "false", "False")
 # Horizontal position over the dresser's own Top: "center" (default),
 # "left" (flush with the dresser's own left side), or "right" (flush with
 # the right side) — e.g. useful to shift the mirror away from a
