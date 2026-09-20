@@ -15,11 +15,18 @@ own color is NOT here — it's picked per-drawer by DRAWER_COLOR_PATTERN
 (params.py), a '1'/'0' digit string (one digit per drawer, top to bottom)
 choosing main/second per drawer instance — a distinct, preserved feature,
 not replaced by PART_ROLES.
+
+The actual resolution rules (swatch_rgb/role_rgb/part_rgb/
+part_effective_role/part_override_rgb) are shared by every furniture/
+module's colors.py — see core/colors.py. This file supplies only the
+data those rules run against: SWATCHES and PART_ROLES.
 """
 
 import os
 
 import yaml
+
+import core.colors
 
 SWATCHES = {
     "white": (1.0, 1.0, 1.0),
@@ -32,69 +39,17 @@ SWATCHES = {
     "glass": (0.78, 0.83, 0.85),  # pale silvered-glass tint, for the optional mirror pane
 }
 
-
-def swatch_rgb(name):
-    if name not in SWATCHES:
-        raise ValueError(f"Unknown color swatch {name!r}; known: {sorted(SWATCHES)}")
-    return SWATCHES[name]
-
-
-# --- The 3 shared roles ---------------------------------------------------
-MAIN_COLOR = swatch_rgb(os.environ.get("MAIN_COLOR") or "misty")
-SECOND_COLOR = swatch_rgb(os.environ.get("SECOND_COLOR") or "white")
-REUSED_COLOR = swatch_rgb(os.environ.get("REUSED_MDF_COLOR") or "white")
-
-_ROLE_COLOR = {"main": MAIN_COLOR, "second": SECOND_COLOR, "reused": REUSED_COLOR}
-
-
-def role_rgb(role):
-    if role not in _ROLE_COLOR:
-        raise ValueError(f"Unknown color role {role!r}; known: {sorted(_ROLE_COLOR)}")
-    return _ROLE_COLOR[role]
-
-
-# --- Which part uses which role -------------------------------------------
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "part_roles.yaml")) as _f:
     PART_ROLES = yaml.safe_load(_f)
 
+_resolver = core.colors.make_resolver(SWATCHES, PART_ROLES)
 
-def part_rgb(part):
-    if part not in PART_ROLES:
-        raise ValueError(f"Unknown part {part!r}; known: {sorted(PART_ROLES)}")
-    return role_rgb(PART_ROLES[part])
+MAIN_COLOR = _resolver.main_color
+SECOND_COLOR = _resolver.second_color
+REUSED_COLOR = _resolver.reused_color
 
-
-def part_effective_role(part):
-    """Which of main/second/reused `part`'s color ACTUALLY resolves to
-    right now, accounting for the same <PART>_ROLE override as
-    part_override_rgb() below — but NOT a <PART>_SWATCH override, which
-    names a specific swatch with no single role of its own (reported as
-    None, never "reused"). Lets a caller decide whether this part's own
-    board can physically come from reclaimed scrap (always assumed a
-    single color, REUSED_MDF_COLOR) or needs a real new sheet in a
-    specific color — reclaimed stock can't supply an arbitrary color on
-    demand, so a part resolving to anything but "reused" needs
-    stock_source="new" regardless of what a caller might otherwise
-    default it to."""
-    if os.environ.get(f"{part.upper()}_SWATCH"):
-        return None
-    return os.environ.get(f"{part.upper()}_ROLE") or PART_ROLES[part]
-
-
-def part_override_rgb(part):
-    """part_rgb(part), unless overridden for just this one order/build:
-    a <PART>_SWATCH env var (e.g. LEFT_SWATCH, from an order item's own
-    left_swatch: key) names a specific swatch directly — independent of
-    PART_ROLES/main-second-reused, same idea as furniture/bed's
-    MIDDLE_BOX_SWATCH/SIDE_BOX_SWATCH; or a <PART>_ROLE env var (e.g.
-    LEFT_ROLE, from an order item's own part_roles: {left: ...} block)
-    reassigns which of main/second/reused it uses instead of
-    part_roles.yaml's own default, without editing that file. SWATCH
-    wins if both are somehow set."""
-    swatch_override = os.environ.get(f"{part.upper()}_SWATCH")
-    if swatch_override:
-        return swatch_rgb(swatch_override)
-    role_override = os.environ.get(f"{part.upper()}_ROLE")
-    if role_override:
-        return role_rgb(role_override)
-    return part_rgb(part)
+swatch_rgb = _resolver.swatch_rgb
+role_rgb = _resolver.role_rgb
+part_rgb = _resolver.part_rgb
+part_effective_role = _resolver.part_effective_role
+part_override_rgb = _resolver.part_override_rgb

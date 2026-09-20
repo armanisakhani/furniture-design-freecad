@@ -133,6 +133,16 @@ def create_panel(
     return obj
 
 
+def resolve_stock(effective_role):
+    """Which stock a panel whose color resolves to `effective_role`
+    (colors.py's part_effective_role()) should be cut from: reclaimed
+    scrap is always assumed a single color (REUSED_MDF_COLOR), so only a
+    part whose effective role is "reused" can come from it — anything
+    else (main/second/None, e.g. a <PART>_SWATCH override) is really
+    asking for a real new sheet in that specific color, not scrap."""
+    return "reclaimed" if effective_role == "reused" else "new"
+
+
 def create_assembly_panel(
     doc,
     obj_name,

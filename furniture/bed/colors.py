@@ -16,91 +16,48 @@ PART_ROLES (loaded from furniture/bed/part_roles.yaml) is the single
 place that answers "what color is X" — box.py/bed.py look up a part's
 role here and resolve it with part_rgb()/part_override_rgb(), instead of
 deciding colors ad hoc at each call site.
+
+The actual resolution rules (swatch_rgb/role_rgb/part_rgb/
+part_effective_role/part_override_rgb) are shared by every furniture/
+module's colors.py — see core/colors.py. This file supplies only the
+data those rules run against: SWATCHES and PART_ROLES.
 """
 
 import os
 
 import yaml
 
+import core.colors
+
 # --- Named swatches (references/colors/) --------------------------------
 # RGB triples, 0-1 range, sampled/estimated by eye from the reference
-# swatch photo. `code` is the manufacturer's own reference number (None
-# for colors with no such reference, e.g. plain white).
+# swatch photo. Manufacturer reference numbers (where known) are noted in
+# comments, not modeled as data — nothing reads them programmatically.
 SWATCHES = {
-    "white": dict(code=None, rgb=(1.0, 1.0, 1.0)),
-    "misty": dict(code=1128, rgb=(0.31, 0.44, 0.50)),  # 1128-misty.jpg
-    "brown": dict(code=1126, rgb=(0.43, 0.35, 0.28)),  # 1126-brown.jpg
-    "anthracite": dict(code=1129, rgb=(0.38, 0.37, 0.36)),  # 1129-anthracite.png
-    "cuppuccino": dict(code=1123, rgb=(0.59, 0.52, 0.48)),  # 1123-cuppuccino.jpeg
-    "pearl": dict(code=1124, rgb=(0.97, 0.97, 0.96)),  # 1124-pearl.jpeg
-    "shale-gray": dict(code=1134, rgb=(0.79, 0.78, 0.79)),  # 1134-shale-gray.jpg
+    "white": (1.0, 1.0, 1.0),
+    "misty": (0.31, 0.44, 0.50),  # 1128-misty.jpg
+    "brown": (0.43, 0.35, 0.28),  # 1126-brown.jpg
+    "anthracite": (0.38, 0.37, 0.36),  # 1129-anthracite.png
+    "cuppuccino": (0.59, 0.52, 0.48),  # 1123-cuppuccino.jpeg
+    "pearl": (0.97, 0.97, 0.96),  # 1124-pearl.jpeg
+    "shale-gray": (0.79, 0.78, 0.79),  # 1134-shale-gray.jpg
 }
-
-
-def swatch_rgb(name):
-    if name not in SWATCHES:
-        raise ValueError(f"Unknown color swatch {name!r}; known: {sorted(SWATCHES)}")
-    return SWATCHES[name]["rgb"]
-
-
-# --- The 3 shared roles ---------------------------------------------------
-MAIN_COLOR = swatch_rgb(os.environ.get("MAIN_COLOR") or "misty")
-SECOND_COLOR = swatch_rgb(os.environ.get("SECOND_COLOR") or "white")
-REUSED_COLOR = swatch_rgb(os.environ.get("REUSED_MDF_COLOR") or "white")
-
-_ROLE_COLOR = {"main": MAIN_COLOR, "second": SECOND_COLOR, "reused": REUSED_COLOR}
-
-
-def role_rgb(role):
-    if role not in _ROLE_COLOR:
-        raise ValueError(f"Unknown color role {role!r}; known: {sorted(_ROLE_COLOR)}")
-    return _ROLE_COLOR[role]
-
 
 # --- Which part uses which role -------------------------------------------
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "part_roles.yaml")) as _f:
     PART_ROLES = yaml.safe_load(_f)
 
+_resolver = core.colors.make_resolver(SWATCHES, PART_ROLES)
 
-def part_rgb(part):
-    if part not in PART_ROLES:
-        raise ValueError(f"Unknown part {part!r}; known: {sorted(PART_ROLES)}")
-    return role_rgb(PART_ROLES[part])
+MAIN_COLOR = _resolver.main_color
+SECOND_COLOR = _resolver.second_color
+REUSED_COLOR = _resolver.reused_color
 
-
-def part_effective_role(part):
-    """Which of main/second/reused `part`'s color ACTUALLY resolves to
-    right now, accounting for the same <PART>_ROLE override as
-    part_override_rgb() below — but NOT a <PART>_SWATCH override, which
-    names a specific swatch with no single role of its own (reported as
-    None, never "reused"). Lets a caller decide whether this part's own
-    board can physically come from reclaimed scrap (always assumed a
-    single color, REUSED_MDF_COLOR) or needs a real new sheet in a
-    specific color — reclaimed stock can't supply an arbitrary color on
-    demand, so a part resolving to anything but "reused" needs
-    stock_source="new" regardless of what a caller might otherwise
-    default it to."""
-    if os.environ.get(f"{part.upper()}_SWATCH"):
-        return None
-    return os.environ.get(f"{part.upper()}_ROLE") or PART_ROLES[part]
-
-
-def part_override_rgb(part):
-    """part_rgb(part), unless overridden for just this one order/build:
-    a <PART>_SWATCH env var (e.g. BOX_TOP_SWATCH, from an order item's own
-    box_top_swatch: key) names a specific swatch directly — independent
-    of PART_ROLES/main-second-reused; or a <PART>_ROLE env var (e.g.
-    BOX_TOP_ROLE, from an order item's own part_roles: {box_top: ...}
-    block) reassigns which of main/second/reused it uses instead of
-    part_roles.yaml's own default, without editing that file. SWATCH
-    wins if both are somehow set."""
-    swatch_override = os.environ.get(f"{part.upper()}_SWATCH")
-    if swatch_override:
-        return swatch_rgb(swatch_override)
-    role_override = os.environ.get(f"{part.upper()}_ROLE")
-    if role_override:
-        return role_rgb(role_override)
-    return part_rgb(part)
+swatch_rgb = _resolver.swatch_rgb
+role_rgb = _resolver.role_rgb
+part_rgb = _resolver.part_rgb
+part_effective_role = _resolver.part_effective_role
+part_override_rgb = _resolver.part_override_rgb
 
 
 # --- Position swatches: one solid color per box, by position -----------
@@ -110,7 +67,9 @@ def part_override_rgb(part):
 # box one color, the 2 side boxes another (e.g. a misty middle box between
 # 2 solid-brown side boxes). Turned on via BOX_COLOR_BY_POSITION
 # (params.py, set per STYLE) — a distinct feature from PART_ROLES above,
-# not part of the main/second/reused vocabulary.
+# not part of the main/second/reused vocabulary. Bed-specific: no
+# equivalent in dresser/wardrobe, so it stays local to this file rather
+# than in core/colors.py.
 POSITION_SWATCHES = dict(middle="misty", side="brown")
 
 

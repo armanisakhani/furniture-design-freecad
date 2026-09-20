@@ -74,7 +74,7 @@ import FreeCAD as App
 
 import colors
 import params
-from core.panel import create_assembly_panel, IDENTITY, ROT_X90, ROT_Y90
+from core.panel import create_assembly_panel, resolve_stock, IDENTITY, ROT_X90, ROT_Y90
 
 # Local aliases so the rest of this module's many call sites don't need
 # renaming — IDENTITY/ROT_X90/ROT_Y90 live in core/panel.py since bed.py
@@ -161,8 +161,8 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
     # color. Neither touches color/visible/footprint, only which stock
     # Bottom + the 2 side walls are cut from.
     shell_stock_source = (
-        "new" if (params.BOX_SHELL_ALL_NEW or colors.part_effective_role("box_body") != "reused")
-        else "reclaimed"
+        "new" if params.BOX_SHELL_ALL_NEW
+        else resolve_stock(colors.part_effective_role("box_body"))
     )
     # edge_color=edge_band_color on every shell panel below colors just its
     # own 4 perimeter/cut-edge faces (core/panel.py's EdgeColor, applied as
@@ -178,7 +178,7 @@ def create_box(doc, box_index, y_offset=None, label_prefix=None):
     # than "reused" needs a real new sheet in that color — per the user's
     # own request, Top now follows this the same way box_body does,
     # instead of always being new regardless of its own color.
-    top_stock_source = "reclaimed" if colors.part_effective_role("box_top") == "reused" else "new"
+    top_stock_source = resolve_stock(colors.part_effective_role("box_top"))
     add_panel(
         "Top", "Top Panel", params.BOX_TOP_PANEL_WIDTH, box_length, t,
         _IDENTITY, App.Vector(params.BOX_TOP_X_MIN, y_offset, box_height - t),

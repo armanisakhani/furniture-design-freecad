@@ -56,7 +56,7 @@ import FreeCAD as App
 
 import colors
 import params
-from core.panel import create_assembly_panel, IDENTITY, ROT_X90, ROT_Y90
+from core.panel import create_assembly_panel, resolve_stock, IDENTITY, ROT_X90, ROT_Y90
 
 
 def create_dresser(doc):
@@ -106,7 +106,7 @@ def create_dresser(doc):
         "Bottom", "Bottom Panel", width, depth, t,
         IDENTITY, App.Vector(0, 0, bottom_z),
         color=colors.part_override_rgb("bottom"), visible=False,
-        stock_source="reclaimed" if colors.part_effective_role("bottom") == "reused" else "new",
+        stock_source=resolve_stock(colors.part_effective_role("bottom")),
     )
     # Top: inset BETWEEN the Left/Right panels (TOP_PANEL_WIDTH), not
     # resting on top of them — see module docstring. Its own front edge
@@ -121,7 +121,7 @@ def create_dresser(doc):
         IDENTITY,
         App.Vector(params.TOP_PANEL_X_MIN, params.TOP_PANEL_Y_MIN, bottom_z + params.TOP_PANEL_Z_MIN),
         color=colors.part_override_rgb("top"), visible=True,
-        stock_source="reclaimed" if colors.part_effective_role("top") == "reused" else "new",
+        stock_source=resolve_stock(colors.part_effective_role("top")),
     )
     # Left/Right: visible (free-standing piece, unlike furniture/bed's
     # boxes tucked into an assembly), full DEPTH, resting on top of the
@@ -134,13 +134,13 @@ def create_dresser(doc):
         "Left", "Left Side Panel", side_height, depth, t,
         ROT_Y90, App.Vector(0, 0, bottom_z + t),
         color=colors.part_override_rgb("left"), visible=True,
-        stock_source="reclaimed" if colors.part_effective_role("left") == "reused" else "new",
+        stock_source=resolve_stock(colors.part_effective_role("left")),
     )
     add_panel(
         "Right", "Right Side Panel", side_height, depth, t,
         ROT_Y90, App.Vector(width - t, 0, bottom_z + t),
         color=colors.part_override_rgb("right"), visible=True,
-        stock_source="reclaimed" if colors.part_effective_role("right") == "reused" else "new",
+        stock_source=resolve_stock(colors.part_effective_role("right")),
     )
     # Back: closes the far (Y=depth) end, same side_height as Left/Right
     # so the carcass stays fully enclosed up to the lip. Hidden — assumed
@@ -149,7 +149,7 @@ def create_dresser(doc):
         "Back", "Back Panel", width, side_height, t,
         ROT_X90, App.Vector(0, depth - t, bottom_z + t),
         color=colors.part_override_rgb("back"), visible=False,
-        stock_source="reclaimed" if colors.part_effective_role("back") == "reused" else "new",
+        stock_source=resolve_stock(colors.part_effective_role("back")),
     )
 
     _add_top_brackets(add_panel, width, depth)
@@ -190,7 +190,7 @@ def _add_mirror(add_panel, width, depth):
 
     kwargs = dict(
         color=colors.part_override_rgb("mirror_frame"), visible=True,
-        stock_source="reclaimed" if colors.part_effective_role("mirror_frame") == "reused" else "new",
+        stock_source=resolve_stock(colors.part_effective_role("mirror_frame")),
     )
     add_panel(
         "MirrorTopRail", "Mirror - Top Rail", outer_w, t, bw, IDENTITY,

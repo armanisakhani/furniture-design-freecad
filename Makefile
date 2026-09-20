@@ -8,6 +8,14 @@ FREECADCMD := /Applications/FreeCAD.app/Contents/Resources/bin/freecadcmd
 # `make test-bed STYLE=inset-raised`. Make auto-exports command-line
 # variables to recipe shells, so no extra plumbing is needed here.
 
+.PHONY: test-core
+
+# core/colors.py + core/panel.py's resolve_stock — the shared engine every
+# furniture/<name>/colors.py resolves against. No furniture-specific
+# knobs; nothing to select here.
+test-core:
+	$(FREECADCMD) core/tests/colors_test.py
+
 .PHONY: test-bed view-bed export-bed cutlist-bed
 
 test-bed:
