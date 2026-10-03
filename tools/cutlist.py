@@ -116,7 +116,7 @@ def group_new_stock(panels):
     quantity, since that's what a workshop actually needs (a cut list, not
     57 separate lines). PVC edge-banding panels are skipped here — bought
     as a roll of tape, not nested onto sheets like MDF/Fiber board."""
-    groups = defaultdict(lambda: defaultdict(lambda: dict(qty=0, labels=[])))
+    groups = defaultdict(lambda: defaultdict(lambda: dict(qty=0, labels=[], outline=None)))
     for p in panels:
         if p["stock_source"] != "new" or p.get("material") == "PVC":
             continue
@@ -125,6 +125,8 @@ def group_new_stock(panels):
         row = groups[color][key]
         row["qty"] += 1
         row["labels"].append(p["label"])
+        if p.get("outline"):
+            row["outline"] = p["outline"]
     return groups
 
 
@@ -133,7 +135,7 @@ def group_reclaimed(panels):
     as group_new_stock (grouped by material instead of color), so the same
     pack_onto/utilization nesting can run per material group; different
     materials (MDF vs Fiber) don't share a sheet."""
-    groups = defaultdict(lambda: defaultdict(lambda: dict(qty=0, labels=[])))
+    groups = defaultdict(lambda: defaultdict(lambda: dict(qty=0, labels=[], outline=None)))
     for p in panels:
         if p["stock_source"] != "reclaimed":
             continue
@@ -141,13 +143,16 @@ def group_reclaimed(panels):
         row = groups[p["material"]][key]
         row["qty"] += 1
         row["labels"].append(p["label"])
+        if p.get("outline"):
+            row["outline"] = p["outline"]
     return groups
 
 
 def pack_onto(rows, sheet_w, sheet_h, kerf=KERF, margin=TRIM_MARGIN):
     """rows: {(length, width, thickness): {"qty": n, "labels": [...]}}.
     Returns (sheets_used, placements) where placements is [(sheet_index,
-    x, y, w, h, rid, length, width, label)], coordinates already shifted
+    x, y, w, h, rid, length, width, label, outline)], outline being the
+    panel's own plan polygon (or None for a plain rectangle); coordinates already shifted
     back to un-inflated, margin-relative sheet space."""
     usable_w = sheet_w - 2 * margin
     usable_h = sheet_h - 2 * margin
@@ -165,7 +170,7 @@ def pack_onto(rows, sheet_w, sheet_h, kerf=KERF, margin=TRIM_MARGIN):
         # panel this row groups together (same size+color, possibly
         # different instances) — carried through so a cutting diagram can
         # show a real descriptive name per placed piece, not just its size.
-        rid_map[next_rid] = (length, width, thickness, row["labels"][0])
+        rid_map[next_rid] = (length, width, thickness, row["labels"][0], row.get("outline"))
         for _ in range(row["qty"]):
             packer.add_rect(length + kerf, width + kerf, rid=next_rid)
         next_rid += 1
@@ -183,8 +188,8 @@ def pack_onto(rows, sheet_w, sheet_h, kerf=KERF, margin=TRIM_MARGIN):
     placements = []
     for bin_index, abin in enumerate(packer):
         for rect in abin:
-            length, width, thickness, label = rid_map[rect.rid]
-            placements.append((bin_index, rect.x, rect.y, rect.width - kerf, rect.height - kerf, rect.rid, length, width, label))
+            length, width, thickness, label, outline = rid_map[rect.rid]
+            placements.append((bin_index, rect.x, rect.y, rect.width - kerf, rect.height - kerf, rect.rid, length, width, label, outline))
 
     return len(packer), placements
 

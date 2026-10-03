@@ -20,9 +20,24 @@ def _font_for(w, h):
     return 14
 
 
+def _outline_polygon(outline, x, y, w, h, length, width, transpose, fill_var, stroke_var):
+    """A non-rectangular panel's real shape: its own plan outline (local
+    X along Length, Y along Width), moved to where pack_onto placed it —
+    turned 90 degrees if the packer rotated it (placed w x h is then
+    width x length, not length x width) — then transposed with the rest
+    of the sheet when displayed landscape."""
+    rotated = abs(w - length) > 0.5 and abs(w - width) <= 0.5
+    pts = []
+    for px, py in outline:
+        sx, sy = (x + py, y + px) if rotated else (x + px, y + py)
+        pts.append((sy, sx) if transpose else (sx, sy))
+    points = " ".join(f"{a:.1f},{b:.1f}" for a, b in pts)
+    return f'<polygon points="{points}" fill="{fill_var}" stroke="{stroke_var}" stroke-width="4" />'
+
+
 def sheet_svg(bin_index, placements, sheet_w, sheet_h, fill_var, stroke_var, aria_label):
     """placements: pack_onto's own return value (list of (bin_index, x, y,
-    w, h, rid, length, width, label)) — draws only the ones on bin_index."""
+    w, h, rid, length, width, label, outline)) — draws only the ones on bin_index."""
     transpose = sheet_w < sheet_h
     disp_w, disp_h = (sheet_h, sheet_w) if transpose else (sheet_w, sheet_h)
     parts = [
@@ -33,7 +48,7 @@ def sheet_svg(bin_index, placements, sheet_w, sheet_h, fill_var, stroke_var, ari
         f'<rect x="10" y="10" width="{disp_w - 20}" height="{disp_h - 20}" '
         f'fill="var(--sheet-bg)" stroke="var(--line-strong)" stroke-width="4" stroke-dasharray="14 10" />',
     ]
-    for (bi, x, y, w, h, rid, length, width, raw_label) in placements:
+    for (bi, x, y, w, h, rid, length, width, raw_label, outline) in placements:
         if bi != bin_index:
             continue
         dx, dy, dw, dh = (y, x, h, w) if transpose else (x, y, w, h)
@@ -42,9 +57,15 @@ def sheet_svg(bin_index, placements, sheet_w, sheet_h, fill_var, stroke_var, ari
         fs = _font_for(dw, dh)
         rotate = dw < dh
         tf = f' transform="rotate(-90 {cx:.1f} {cy:.1f})"' if rotate else ""
+        if outline:
+            shape = _outline_polygon(outline, x, y, w, h, length, width, transpose, fill_var, stroke_var)
+        else:
+            shape = (
+                f'<rect x="{dx:.1f}" y="{dy:.1f}" width="{dw:.1f}" height="{dh:.1f}" '
+                f'fill="{fill_var}" stroke="{stroke_var}" stroke-width="4" />'
+            )
         parts.append(
-            f'<g>\n  <rect x="{dx:.1f}" y="{dy:.1f}" width="{dw:.1f}" height="{dh:.1f}" '
-            f'fill="{fill_var}" stroke="{stroke_var}" stroke-width="4" />\n'
+            f'<g>\n  {shape}\n'
             f'  <text x="{cx:.1f}" y="{cy - fs * 0.3:.1f}" text-anchor="middle"{tf} '
             f'font-family="Vazirmatn" font-size="{fs}" font-weight="700" fill="var(--ink)">{label}</text>\n'
             f'  <text x="{cx:.1f}" y="{cy + fs * 0.55:.1f}" text-anchor="middle"{tf} '

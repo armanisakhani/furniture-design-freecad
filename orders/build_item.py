@@ -52,6 +52,9 @@ def main():
             name=p.Name, label=p.Label,
             length=p.Length.Value, width=p.Width.Value, thickness=p.Thickness.Value,
             material=p.Material, stock_source=p.StockSource, color=list(p.PanelColor)[:3],
+            # Non-rectangular panel's plan outline (core/panel.py's Outline),
+            # so the cutting diagram can draw its real shape.
+            **({"outline": [[v.x, v.y] for v in p.Outline]} if len(p.Outline) >= 3 else {}),
         )
         for p in panels
     ]

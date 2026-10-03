@@ -306,7 +306,7 @@ section h2 { font-size: 20px; font-weight: 700; margin: 0 0 4px; }
 section .section-note { margin: 0 0 18px; color: var(--ink-soft); font-size: 14.5px; line-height: 1.8; max-width: 68ch; }
 .legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 13px; color: var(--ink-soft); background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 12px 16px; margin-bottom: 20px; }
 .diagram-wrap { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 20px; overflow-x: auto; }
-.diagram-wrap svg { display: block; margin: 0 auto; width: 1500px; max-width: none; height: 750px; }
+.diagram-wrap svg { display: block; margin: 0 auto; width: 100%; max-width: 1500px; height: auto; }
 h3.sheet-title { font-size: 15px; font-weight: 600; margin: 32px 0 10px; display: flex; align-items: center; gap: 8px; }
 h3.sheet-title:first-of-type { margin-top: 0; }
 .table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; }
