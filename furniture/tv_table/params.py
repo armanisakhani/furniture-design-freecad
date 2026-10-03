@@ -1,17 +1,17 @@
 """
 Single source of truth for every design parameter of the TV table
-(میز تلویزیون): a low, trapezoidal corner cabinet (wide front, narrow
-back against the wall) with ONE drawer whose Face spans the whole front.
+(میز تلویزیون): a low trapezoidal corner unit (wide front, narrow
+back against the wall): ONE drawer whose Face spans the whole front, an
+MDF trapezoid Top over it, and a second MDF trapezoid shelf on metal legs.
 Mirrors furniture/dresser/params.py's shape. Dimensions below are from the
 user's own brief (photo tv-table.jpg + sizes, 2026-10-03): trapezoid
 parallel sides 1670 / 860, trapezoid height (depth) 400, drawer Face
-1670 x 220. The glass shelf on legs visible in the photo is not modeled.
+1670 x 220.
 
 Units: millimeters. Axes: X = left-right, Y = front-back (Y=0 is the
 front edge of the trapezoid, the drawer opens toward -Y), Z = height.
 """
 
-import math
 import os
 
 import colors
@@ -27,20 +27,29 @@ HEIGHT = int(os.environ.get("HEIGHT") or 220)  # whole body, == drawer Face heig
 if BACK_WIDTH >= FRONT_WIDTH:
     raise ValueError(f"BACK_WIDTH={BACK_WIDTH} must be smaller than FRONT_WIDTH={FRONT_WIDTH}")
 
-# Each slanted side runs from the front corner inward by this much.
+# Each slanted edge of the trapezoid runs inward from its front corner by this much.
 SIDE_INSET = (FRONT_WIDTH - BACK_WIDTH) / 2
-# Length of a slanted side's outer edge, and how far one board thickness
-# shifts it horizontally (t / sin(angle)) / along Y (t * SIDE_INSET / L).
-SIDE_SLANT_LENGTH = math.hypot(SIDE_INSET, DEPTH)
-SIDE_HORIZONTAL_THICKNESS = MDF_THICKNESS * SIDE_SLANT_LENGTH / DEPTH
 
-INTERIOR_HEIGHT = HEIGHT - 2 * MDF_THICKNESS
+INTERIOR_HEIGHT = HEIGHT - MDF_THICKNESS  # drawer's own room: floor to the Top panel's underside
+
+# --- Upper shelf ----------------------------------------------------------
+# The photo's 2nd tier: a second MDF trapezoid (same size as the Top) on
+# metal legs above the cabinet. Leg sizes/positions are estimates from
+# tv-table.jpg (TBD — not given by the user).
+HAS_SHELF = os.environ.get("HAS_SHELF", "1") not in ("0", "false", "False")
+SHELF_THICKNESS = MDF_THICKNESS
+SHELF_LEG_HEIGHT = int(os.environ.get("SHELF_LEG_HEIGHT") or 80)  # TBD: gap between the cabinet Top and the shelf
+SHELF_LEG_SIZE = 25  # TBD: square metal post standing in for the round chrome leg
+SHELF_LEG_SETBACK = 50  # TBD: leg center's distance from the front/back edge
+SHELF_LEG_SIDE_FRACTION = 0.12  # TBD: side legs sit this fraction of the width in from each slanted edge
+LEG_COLOR = colors.swatch_rgb("metal")
 
 # --- Drawer ------------------------------------------------------------
-# The Face covers the whole front (full overlay, flush against Y=0 and
-# protruding toward -Y by its own thickness); the drawer box itself is as
-# wide as the trapezoid's short side, so it still clears the slanted sides
-# all the way back.
+# The whole body is just the drawer + the Top trapezoid above it (no
+# floor, sides or back, per the user). The Face covers the whole front
+# (full overlay, flush against Y=0 and protruding toward -Y by its own
+# thickness); the drawer box itself is as wide as the trapezoid's short
+# side, so it stays under the Top all the way back.
 FACE_WIDTH = FRONT_WIDTH
 FACE_HEIGHT = HEIGHT
 FACE_THICKNESS = MDF_THICKNESS
@@ -50,17 +59,5 @@ RAIL_CLEARANCE = 13  # per side, slide hardware
 RAIL_BACK_CLEARANCE = 20
 DRAWER_TOP_REVEAL_GAP = 6
 DRAWER_WIDTH = BACK_WIDTH
-DRAWER_DEPTH = DEPTH - MDF_THICKNESS - RAIL_BACK_CLEARANCE
+DRAWER_DEPTH = DEPTH - RAIL_BACK_CLEARANCE
 DRAWER_CARCASS_HEIGHT = INTERIOR_HEIGHT - DRAWER_BOTTOM_THICKNESS - DRAWER_TOP_REVEAL_GAP
-
-
-def interior_width_at(y):
-    """Clear width between the slanted sides' inner faces at depth y."""
-    return FRONT_WIDTH - 2 * (y * SIDE_INSET / DEPTH + SIDE_HORIZONTAL_THICKNESS)
-
-
-if interior_width_at(DRAWER_DEPTH) < DRAWER_WIDTH + 2 * RAIL_CLEARANCE:
-    raise ValueError(
-        f"Drawer ({DRAWER_WIDTH} wide, {DRAWER_DEPTH} deep) doesn't clear the slanted "
-        f"sides: only {interior_width_at(DRAWER_DEPTH):.0f}mm free at its back"
-    )

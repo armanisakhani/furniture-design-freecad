@@ -1,17 +1,13 @@
 """
-TV table (میز تلویزیون): a low trapezoidal cabinet — wide front, narrow
-back against the wall — with one drawer. Top/Bottom are trapezoid
-panels (core/panel.py's Outline); Left/Right are the 2 slanted sides,
-cut so each one's inner front corner lands exactly on the front plane
-(Y=0) and its outer back corner on the wall plane (Y=DEPTH); Back is a
-rectangle across the narrow end. The drawer box is as wide as the
-trapezoid's short side, and its Face covers the whole front (full
-overlay, Y from -MDF_THICKNESS to 0). See params.py for the numbers.
+TV table (میز تلویزیون): a low trapezoidal unit — wide front, narrow
+back against the wall. Just one drawer (as wide as the trapezoid's short
+side, its Face covering the whole front — full overlay, Y from
+-MDF_THICKNESS to 0) under an MDF trapezoid Top (core/panel.py's
+Outline), plus a second MDF trapezoid shelf on 4 metal legs above it.
+No floor, sides or back, per the user. See params.py for the numbers.
 
 Axes: X = left-right, Y = front-back (drawer opens toward -Y), Z = up.
 """
-
-import math
 
 import FreeCAD as App
 
@@ -25,7 +21,6 @@ def create_tv_table(doc):
     t = params.MDF_THICKNESS
     width = params.FRONT_WIDTH
     depth = params.DEPTH
-    inset = params.SIDE_INSET
     panels = []
 
     def add_panel(obj_name, label, length, width_, thickness, rotation,
@@ -48,61 +43,23 @@ def create_tv_table(doc):
             stock_source=resolve_stock(colors.part_effective_role(part)),
         )
 
-    trapezoid = [
-        App.Vector(0, 0, 0), App.Vector(width, 0, 0),
-        App.Vector(width - inset, depth, 0), App.Vector(inset, depth, 0),
-    ]
-    add_panel(
-        "Bottom", "Bottom Panel", width, depth, t, IDENTITY,
-        App.Vector(0, 0, 0), outline=trapezoid, **part_kwargs("bottom", False),
-    )
     add_panel(
         "Top", "Top Panel", width, depth, t, IDENTITY,
-        App.Vector(0, 0, params.HEIGHT - t), outline=trapezoid, **part_kwargs("top", True),
+        App.Vector(0, 0, params.HEIGHT - t), outline=_trapezoid(), **part_kwargs("top", True),
     )
-
-    _add_sides(add_panel, part_kwargs)
-
-    back_x_min = inset + params.SIDE_HORIZONTAL_THICKNESS
-    add_panel(
-        "Back", "Back Panel", width - 2 * back_x_min, params.INTERIOR_HEIGHT, t, ROT_X90,
-        App.Vector(back_x_min, depth - t, t), **part_kwargs("back", False),
-    )
-
     _add_drawer(add_panel, part_kwargs)
+    if params.HAS_SHELF:
+        _add_shelf(add_panel, part_kwargs)
     return panels
 
 
-def _add_sides(add_panel, part_kwargs):
-    """The 2 slanted side boards. Each is a plain box turned about Z to
-    follow its slanted edge; its position is derived from where the 4
-    plan-view corners land (inner front corner on Y=0, outer back corner
-    on Y=DEPTH — see module docstring)."""
-    t = params.MDF_THICKNESS
-    depth = params.DEPTH
-    inset = params.SIDE_INSET
-    slant = params.SIDE_SLANT_LENGTH
-
-    # Left side, plan corners: outer front -> outer back, then the inner
-    # face is that edge pushed inward by t along n = (depth, -inset)/slant.
-    front_y = t * inset / slant
-    front_x = front_y * inset / depth
-    length = math.hypot(inset - front_x, depth - front_y)
-    angle = math.degrees(math.atan2(depth, inset))
-    rot_left = App.Rotation(App.Vector(0, 0, 1), angle).multiply(App.Rotation(App.Vector(1, 0, 0), 90))
-    rot_right = App.Rotation(App.Vector(0, 0, 1), 180 - angle).multiply(App.Rotation(App.Vector(1, 0, 0), -90))
-    # Right side is the mirror image: x -> FRONT_WIDTH - x. The left
-    # side's plan bbox min is (front_x, 0) and its max x is the inner back
-    # corner's, so the mirrored one's min x is FRONT_WIDTH minus that.
-    left_x_max = inset + t * depth / slant
-    add_panel(
-        "Left", "Left Side Panel", length, params.INTERIOR_HEIGHT, t, rot_left,
-        App.Vector(front_x, 0, t), **part_kwargs("left", True),
-    )
-    add_panel(
-        "Right", "Right Side Panel", length, params.INTERIOR_HEIGHT, t, rot_right,
-        App.Vector(params.FRONT_WIDTH - left_x_max, 0, t), **part_kwargs("right", True),
-    )
+def _trapezoid():
+    """Plan outline shared by the Top and the upper shelf."""
+    width, depth, inset = params.FRONT_WIDTH, params.DEPTH, params.SIDE_INSET
+    return [
+        App.Vector(0, 0, 0), App.Vector(width, 0, 0),
+        App.Vector(width - inset, depth, 0), App.Vector(inset, depth, 0),
+    ]
 
 
 def _add_drawer(add_panel, part_kwargs):
@@ -112,7 +69,7 @@ def _add_drawer(add_panel, part_kwargs):
     dw = params.DRAWER_WIDTH
     dd = params.DRAWER_DEPTH
     x_min = (params.FRONT_WIDTH - dw) / 2
-    bottom_z = t
+    bottom_z = 0
     carcass_z = bottom_z + params.DRAWER_BOTTOM_THICKNESS
     ch = params.DRAWER_CARCASS_HEIGHT
     hidden = dict(visible=False, stock_source="reclaimed")
@@ -144,3 +101,30 @@ def _add_drawer(add_panel, part_kwargs):
         params.FACE_THICKNESS, ROT_X90, App.Vector(0, -params.FACE_THICKNESS, 0),
         **part_kwargs("face", True),
     )
+
+
+def _add_shelf(add_panel, part_kwargs):
+    """Upper MDF trapezoid on 4 metal legs standing on the Top panel."""
+    width = params.FRONT_WIDTH
+    depth = params.DEPTH
+    inset = params.SIDE_INSET
+    leg = params.SHELF_LEG_SIZE
+    z_shelf = params.HEIGHT + params.SHELF_LEG_HEIGHT
+
+    add_panel(
+        "Shelf", "Upper Shelf", width, depth, params.SHELF_THICKNESS, IDENTITY,
+        App.Vector(0, 0, z_shelf), outline=_trapezoid(), **part_kwargs("shelf", True),
+    )
+    for row, y_center in (("Front", params.SHELF_LEG_SETBACK), ("Back", depth - params.SHELF_LEG_SETBACK)):
+        left = y_center * inset / depth  # slanted edge's x at this depth
+        span = width - 2 * left
+        for side, x_center in (
+            ("Left", left + params.SHELF_LEG_SIDE_FRACTION * span),
+            ("Right", width - left - params.SHELF_LEG_SIDE_FRACTION * span),
+        ):
+            add_panel(
+                f"ShelfLeg{row}{side}", f"Shelf Leg ({row.lower()} {side.lower()})",
+                leg, leg, params.SHELF_LEG_HEIGHT, IDENTITY,
+                App.Vector(x_center - leg / 2, y_center - leg / 2, params.HEIGHT),
+                material="Metal", color=params.LEG_COLOR,
+            )

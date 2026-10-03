@@ -12,7 +12,10 @@ back_width: 860             # mm, short parallel side (against the wall) — als
 depth: 400                  # mm, trapezoid height, front to wall
 height: 220                 # mm, whole body == drawer Face height
 
-# Per-part color overrides (parts: left, right, top, bottom, back, face) —
+has_shelf: true             # the upper trapezoid shelf on metal legs
+shelf_leg_height: 80        # mm, gap between the Top and the upper shelf
+
+# Per-part color overrides (parts: top, shelf, face) —
 # see furniture/tv_table/part_roles.yaml. Same two ways as the dresser:
 #   part_roles: {face: second}   # reassign main/second/reused
 #   face_swatch: brown           # exact swatch, wins over part_roles
