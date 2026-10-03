@@ -1,0 +1,11 @@
+# Which color role (main/second/reused — see colors.py's MAIN_COLOR/
+# SECOND_COLOR/REUSED_MDF_COLOR) each named part uses, project-wide.
+# Overridable per order item via part_roles: {...} or <part>_swatch: keys,
+# same as furniture/dresser/part_roles.yaml.
+
+left: main       # Left (slanted) Side Panel
+right: main      # Right (slanted) Side Panel
+top: main        # Top Panel (trapezoid)
+bottom: reused   # Bottom Panel (trapezoid) — hidden underside, reclaimed stock by default
+back: reused     # Back Panel — hidden, against the wall
+face: main       # the drawer's own full-width front (نما)

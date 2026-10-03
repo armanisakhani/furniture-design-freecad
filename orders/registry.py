@@ -58,6 +58,7 @@ FURNITURE = {
     "bed": dict(dir=os.path.join(_ROOT, "furniture", "bed"), label="تخت", flip=True),
     "dresser": dict(dir=os.path.join(_ROOT, "furniture", "dresser"), label="دراور", flip=False),
     "wardrobe": dict(dir=os.path.join(_ROOT, "furniture", "wardrobe"), label="کمد لباس", flip=False),
+    "tv_table": dict(dir=os.path.join(_ROOT, "furniture", "tv_table"), label="میز تلویزیون", flip=False),
 }
 
 # order-level `colors:` keys -> the env var each furniture module's own

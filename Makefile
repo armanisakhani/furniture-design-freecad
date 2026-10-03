@@ -69,6 +69,18 @@ else
 	tools/export_dresser_gltf.sh
 endif
 
+.PHONY: test-tv-table view-tv-table
+
+test-tv-table:
+	$(FREECADCMD) furniture/tv_table/tests/tv_table_test.py
+
+view-tv-table:
+ifdef VIEW_ONLY
+	tools/view_tv_table.sh --view-only
+else
+	tools/view_tv_table.sh
+endif
+
 .PHONY: test-wardrobe view-wardrobe export-wardrobe
 
 test-wardrobe:

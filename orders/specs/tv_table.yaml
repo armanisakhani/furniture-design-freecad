@@ -1,0 +1,6 @@
+colors:
+  main: misty
+  second: brown
+items:
+  - furniture: tv_table
+    qty: 1

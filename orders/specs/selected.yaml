@@ -5,8 +5,8 @@
 # Cutlist report: tools/order.sh misty_brown --report
 
 colors:
-  main: cuppuccino
-  second: pearl
+  main: misty
+  second: brown
 
 items:
   - furniture: bed
@@ -44,6 +44,7 @@ items:
     style: two-piece
     color_pattern: "1_0111"
     width: 900
+    hanging_height: 1000
     # one '1'(main)/'0'(second) digit per side shelf, top to bottom — same
     # convention as color_pattern's own drawer digits, independent of
     # part_roles (two_piece only).
@@ -60,8 +61,11 @@ items:
       left: main
       right: main
       top: reused
-      hanging_top: main
-      bottom: reused
-      back: reused
-      bottom_top: reused
+      hanging_top: reused
       hanging_bottom: reused
+      bottom: reused
+      bottom_top: reused
+      back: reused
+
+  - furniture: tv_table
+    qty: 1

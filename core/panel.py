@@ -14,6 +14,7 @@ which property means what.
 """
 
 import Part
+from FreeCAD import Vector
 
 from .placement import place_panel, IDENTITY, ROT_X90, ROT_Y90
 
@@ -46,6 +47,16 @@ class Panel:
                 "App::PropertyLength", "Thickness", "Panel",
                 "Panel thickness, local Z before Placement (mm)",
             ).Thickness = 16
+        if not hasattr(obj, "Outline"):
+            obj.addProperty(
+                "App::PropertyVectorList", "Outline", "Panel",
+                "Optional plan outline in local XY (mm), extruded by "
+                "Thickness along local Z — for a non-rectangular panel "
+                "(e.g. a trapezoid top). Empty (the default) means a plain "
+                "Length x Width x Thickness box. Length/Width must still "
+                "be the outline's own bounding-box size (what the cut "
+                "list nests).",
+            )
         if not hasattr(obj, "Material"):
             obj.addProperty(
                 "App::PropertyEnumeration", "Material", "Panel",
@@ -99,7 +110,12 @@ class Panel:
         length = obj.Length.Value
         width = obj.Width.Value
         thickness = obj.Thickness.Value
-        obj.Shape = Part.makeBox(length, width, thickness)
+        outline = list(obj.Outline)
+        if len(outline) < 3:
+            obj.Shape = Part.makeBox(length, width, thickness)
+            return
+        face = Part.Face(Part.makePolygon(outline + [outline[0]]))
+        obj.Shape = face.extrude(Vector(0, 0, thickness))
 
 
 def create_panel(
@@ -114,6 +130,7 @@ def create_panel(
     edge_color=None,
     visible=True,
     stock_source="new",
+    outline=None,
 ):
     """Add one Panel FeaturePython object to doc and set its properties from
     params.py values (never pass literals in from geometry code). edge_color
@@ -125,6 +142,8 @@ def create_panel(
     obj.Length = length
     obj.Width = width
     obj.Thickness = thickness
+    if outline:
+        obj.Outline = outline
     obj.Material = material
     obj.PanelColor = color
     obj.EdgeColor = edge_color if edge_color is not None else color
@@ -159,6 +178,7 @@ def create_assembly_panel(
     stock_source="new",
     reclaimed_color=None,
     new_color=None,
+    outline=None,
 ):
     """create_panel() + place_panel() in one call, applying the shared
     stock_source -> color default rule (CONTEXT.md): if color is None, it's
@@ -172,7 +192,7 @@ def create_assembly_panel(
     obj = create_panel(
         doc, obj_name, label, length, width, thickness,
         material=material, color=color, edge_color=edge_color, visible=visible,
-        stock_source=stock_source,
+        stock_source=stock_source, outline=outline,
     )
     place_panel(doc, obj, rotation, target_min)
     return obj

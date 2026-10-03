@@ -1,0 +1,20 @@
+# Every parameter furniture/tv_table/params.py accepts as an order-item
+# override, each shown at its own default value — see
+# orders/specs/<name>.yaml's `items:` list for where these keys go.
+# Documentation only: nothing reads this file.
+
+furniture: tv_table
+qty: 1
+gap_after: 300              # mm gap AFTER this item's own copies, before the next item
+
+front_width: 1670           # mm, long parallel side of the trapezoid (the front, with the drawer Face)
+back_width: 860             # mm, short parallel side (against the wall) — also the drawer box's width
+depth: 400                  # mm, trapezoid height, front to wall
+height: 220                 # mm, whole body == drawer Face height
+
+# Per-part color overrides (parts: left, right, top, bottom, back, face) —
+# see furniture/tv_table/part_roles.yaml. Same two ways as the dresser:
+#   part_roles: {face: second}   # reassign main/second/reused
+#   face_swatch: brown           # exact swatch, wins over part_roles
+part_roles: null
+face_swatch: null
