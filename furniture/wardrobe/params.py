@@ -122,7 +122,7 @@ DRAWER_SECTION_HEIGHT = DRAWER_COUNT * DRAWER_FACE_HEIGHT
 # --- Hanging compartment --------------------------------------------------
 # Sized (with DRAWER_SECTION_HEIGHT below) so the assembled wardrobe's
 # total height lands around 1800mm.
-HANGING_INTERIOR_HEIGHT = 936  # TBD
+HANGING_INTERIOR_HEIGHT = int(os.environ.get("HANGING_HEIGHT") or 936)  # TBD default; override via an order item's own `hanging_height:` key
 
 # Hanging rod (میله آویز): a square metal bar standing in for a round rod
 # (box-only Panel primitive, like the drawer handle's own bar). No
