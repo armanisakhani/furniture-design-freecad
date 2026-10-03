@@ -38,12 +38,20 @@ def main():
     doc.recompute()
     doc.saveAs(OUTPUT_FILE)
 
+    plinth_panels = 2 if params.PLINTH_HEIGHT else 0
     mirror_panels = 5 if params.HAS_MIRROR else 0  # 2 rails + 2 stiles + 1 pane
     print(f"Created {OUTPUT_FILE}")
     print(
         f"Total panels: {len(panels)} (expected 5 shell + 6 bracket + "
-        f"{params.DRAWER_COUNT} x 9 drawer + {mirror_panels} mirror)"
+        f"{params.DRAWER_COUNT} x 9 drawer + {mirror_panels} mirror + {plinth_panels} plinth)"
     )
+    assert len(panels) == 5 + 6 + params.DRAWER_COUNT * 9 + mirror_panels + plinth_panels
+    if params.PLINTH_HEIGHT:
+        by_name = {p.Name: p for p in panels}
+        # sides stand on the floor; Bottom is raised between them
+        for name in ("Left", "Right"):
+            assert abs(by_name[name].Shape.BoundBox.ZMin) < 1e-3, f"{name} should reach the floor"
+        assert abs(by_name["Bottom"].Shape.BoundBox.ZMin - params.PLINTH_HEIGHT) < 1e-3
 
     # X: 0..WIDTH. Y: Inset Face panels land flush at Y=0 (the shell's own
     # open-face plane) — the furthest-forward point of the carcass itself

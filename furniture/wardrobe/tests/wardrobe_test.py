@@ -42,7 +42,8 @@ def main():
     # shelf board + 2 brackets (front/back) x 2 legs = 5 panels/shelf,
     # plus 1 spare of the side panel they're screwed into.
     side_shelf_panels = params.SIDE_SHELF_COUNT * 5 + 1 if params.LAYOUT == "two_piece" else 0
-    non_drawer_panels = (15 if params.LAYOUT == "one_piece" else 19) + side_shelf_panels
+    plinth_panels = 2 if params.PLINTH_HEIGHT else 0
+    non_drawer_panels = (15 if params.LAYOUT == "one_piece" else 19) + side_shelf_panels + plinth_panels
     height = params.ONE_PIECE_HEIGHT if params.LAYOUT == "one_piece" else params.TWO_PIECE_HEIGHT
 
     print(f"Created {OUTPUT_FILE} (LAYOUT={params.LAYOUT!r})")
@@ -63,6 +64,7 @@ def main():
             xmax += params.SIDE_SHELF_PROJECTION
         else:
             xmin -= params.SIDE_SHELF_PROJECTION
+    assert len(panels) == non_drawer_panels + params.DRAWER_COUNT * 9
     verify_footprint(
         "wardrobe_test", panels,
         expected=dict(

@@ -45,6 +45,9 @@ items:
     color_pattern: "1_0111"
     width: 900
     hanging_height: 1000
+    plinth_height: 80               # mm; >0 runs the sides to the floor, raises the Bottom between them + 2 plinth strips (adds to total height)
+    plinth_setback: 80              # mm, recess of the front plinth strip (a toe-kick); 0 = flush with the front
+
     # one '1'(main)/'0'(second) digit per side shelf, top to bottom — same
     # convention as color_pattern's own drawer digits, independent of
     # part_roles (two_piece only).

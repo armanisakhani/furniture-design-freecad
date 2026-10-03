@@ -14,6 +14,7 @@ import FreeCAD as App
 import colors
 import params
 from core.panel import create_assembly_panel, resolve_stock, IDENTITY, ROT_X90, ROT_Y90
+from core.plinth import add_plinth
 
 
 def create_wardrobe(doc):
@@ -44,6 +45,42 @@ def _make_add_panel(doc, panels):
     return add_panel
 
 
+def _add_base(add_panel, name_prefix, label_prefix, side_height, width, depth):
+    """Bottom + Left/Right + (if params.PLINTH_HEIGHT) the 2 plinth strips
+    of one floor-standing carcass. name_prefix/label_prefix are "" for
+    one_piece, "Bottom"/"Bottom Unit - " for two_piece's own bottom unit."""
+    t = params.MDF_THICKNESS
+    plinth = params.PLINTH_HEIGHT
+    # With a plinth the Bottom fits BETWEEN the sides (which run to the
+    # floor) instead of under them — see params.py's PLINTH_HEIGHT.
+    add_panel(
+        "Bottom", "Bottom Panel", width - 2 * t if plinth else width, depth, t,
+        IDENTITY, App.Vector(t if plinth else 0, 0, plinth),
+        color=colors.part_override_rgb("bottom"), visible=False,
+        stock_source=resolve_stock(colors.part_effective_role("bottom")),
+    )
+    side_z = 0 if plinth else t
+    side_length = plinth + t + side_height - side_z
+    for side, x in (("Left", 0), ("Right", width - t)):
+        add_panel(
+            f"{name_prefix}{side}", f"{label_prefix}{side} Side Panel" if not label_prefix else f"{label_prefix}{side} Side",
+            side_length, depth, t, ROT_Y90, App.Vector(x, 0, side_z),
+            color=colors.part_override_rgb(side.lower()), visible=True,
+            stock_source=resolve_stock(colors.part_effective_role(side.lower())),
+        )
+    add_plinth(
+        add_panel, width, depth, t, plinth, params.PLINTH_SETBACK,
+        front_kwargs=dict(
+            color=colors.part_override_rgb("plinth"), visible=True,
+            stock_source=resolve_stock(colors.part_effective_role("plinth")),
+        ),
+        back_kwargs=dict(
+            color=colors.part_override_rgb("back"), visible=False,
+            stock_source=resolve_stock(colors.part_effective_role("back")),
+        ),
+    )
+
+
 def _create_one_piece(doc):
     """One continuous carcass: the same Left/Right/Back panels span both
     the drawer section and the hanging compartment above it."""
@@ -55,34 +92,17 @@ def _create_one_piece(doc):
     panels = []
     add_panel = _make_add_panel(doc, panels)
 
-    add_panel(
-        "Bottom", "Bottom Panel", width, depth, t,
-        IDENTITY, App.Vector(0, 0, 0),
-        color=colors.part_override_rgb("bottom"), visible=False,
-        stock_source=resolve_stock(colors.part_effective_role("bottom")),
-    )
-    add_panel(
-        "Left", "Left Side Panel", side_height, depth, t,
-        ROT_Y90, App.Vector(0, 0, t),
-        color=colors.part_override_rgb("left"), visible=True,
-        stock_source=resolve_stock(colors.part_effective_role("left")),
-    )
-    add_panel(
-        "Right", "Right Side Panel", side_height, depth, t,
-        ROT_Y90, App.Vector(width - t, 0, t),
-        color=colors.part_override_rgb("right"), visible=True,
-        stock_source=resolve_stock(colors.part_effective_role("right")),
-    )
+    _add_base(add_panel, "", "", side_height, width, depth)
     add_panel(
         "Back", "Back Panel", width, side_height, t,
-        ROT_X90, App.Vector(0, depth - t, t),
+        ROT_X90, App.Vector(0, depth - t, params.PLINTH_HEIGHT + t),
         color=colors.part_override_rgb("back"), visible=False,
         stock_source=resolve_stock(colors.part_effective_role("back")),
     )
 
     drawer_x_min = t + params.RAIL_CLEARANCE
     for index in range(params.DRAWER_COUNT):
-        band_z_min = t + index * params.DRAWER_FACE_HEIGHT
+        band_z_min = params.PLINTH_HEIGHT + t + index * params.DRAWER_FACE_HEIGHT
         _add_drawer(add_panel, index, drawer_x_min, band_z_min)
 
     # Divider: inset, closes the drawer section and floors the hanging
@@ -123,34 +143,17 @@ def _create_two_piece(doc):
 
     # --- Bottom unit (dresser-like) ---------------------------------
     bottom_side_height = params.BOTTOM_UNIT_SIDE_HEIGHT
-    add_panel(
-        "Bottom", "Bottom Panel", width, depth, t,
-        IDENTITY, App.Vector(0, 0, 0),
-        color=colors.part_override_rgb("bottom"), visible=False,
-        stock_source=resolve_stock(colors.part_effective_role("bottom")),
-    )
-    add_panel(
-        "BottomLeft", "Bottom Unit - Left Side", bottom_side_height, depth, t,
-        ROT_Y90, App.Vector(0, 0, t),
-        color=colors.part_override_rgb("left"), visible=True,
-        stock_source=resolve_stock(colors.part_effective_role("left")),
-    )
-    add_panel(
-        "BottomRight", "Bottom Unit - Right Side", bottom_side_height, depth, t,
-        ROT_Y90, App.Vector(width - t, 0, t),
-        color=colors.part_override_rgb("right"), visible=True,
-        stock_source=resolve_stock(colors.part_effective_role("right")),
-    )
+    _add_base(add_panel, "Bottom", "Bottom Unit - ", bottom_side_height, width, depth)
     add_panel(
         "BottomBack", "Bottom Unit - Back", width, bottom_side_height, t,
-        ROT_X90, App.Vector(0, depth - t, t),
+        ROT_X90, App.Vector(0, depth - t, params.PLINTH_HEIGHT + t),
         color=colors.part_override_rgb("back"), visible=False,
         stock_source=resolve_stock(colors.part_effective_role("back")),
     )
 
     drawer_x_min = t + params.RAIL_CLEARANCE
     for index in range(params.DRAWER_COUNT):
-        band_z_min = t + index * params.DRAWER_FACE_HEIGHT
+        band_z_min = params.PLINTH_HEIGHT + t + index * params.DRAWER_FACE_HEIGHT
         _add_drawer(add_panel, index, drawer_x_min, band_z_min)
 
     # Full-width, flat: a real surface for the hanging unit to rest on.

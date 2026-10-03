@@ -14,6 +14,8 @@ color_pattern: "1_0111"      # "<door digit>_<drawer pattern>" — overrides the
 door_swatch: null            # e.g. "anthracite" — an independent door color, not just main/second (any furniture/wardrobe/colors.py SWATCHES name)
 width: 800                   # mm, left-right — DEPTH/DRAWER_COUNT/etc. don't scale with this, only WIDTH-derived panels do
 hanging_height: 936          # mm, interior height of the hanging (rod) compartment — total wardrobe height = drawers + this + panels
+plinth_height: 0             # mm; >0 runs the (bottom unit's) sides to the floor, raises the Bottom between them + 2 plinth strips (adds to total height)
+plinth_setback: 0            # mm, recess of the front plinth strip (a toe-kick); 0 = flush with the front
 side_shelf_color_pattern: "111"  # one '1'(main)/'0'(second) digit per shelf, top to bottom — same convention as color_pattern's drawer digits (two_piece only)
 
 # Per-part color overrides, just for this one item — see

@@ -15,6 +15,7 @@ right: main        # Right/BottomRight/HangingRight side panels
 top: main          # Top (one_piece)/Divider — the truly visible, new-stock ceiling/divider panels
 hanging_top: main  # Hanging Unit - Top Panel (two_piece) — own role, own cut-edge always "main" (see below)
 bottom: reused     # Bottom Panel — hidden base, cut from reclaimed stock by default
+plinth: main       # front plinth strip (only exists when PLINTH_HEIGHT > 0)
 back: reused       # Back/BottomBack/HangingBack — hidden, assumed against a wall, both layouts
 
 # Side shelf boards (two_piece only) are NOT one of these roles — each

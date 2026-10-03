@@ -57,6 +57,7 @@ import FreeCAD as App
 import colors
 import params
 from core.panel import create_assembly_panel, resolve_stock, IDENTITY, ROT_X90, ROT_Y90
+from core.plinth import add_plinth
 
 
 def create_dresser(doc):
@@ -69,7 +70,8 @@ def create_dresser(doc):
     depth = params.DEPTH
     interior_height = params.INTERIOR_HEIGHT
     side_height = params.SIDE_HEIGHT
-    bottom_z = 0
+    plinth = params.PLINTH_HEIGHT
+    bottom_z = plinth  # underside of the Bottom panel
 
     panels = []
 
@@ -102,9 +104,11 @@ def create_dresser(doc):
     # resolves to anything but "reused" (project-wide default, or
     # overridden for just this order), that's really asking for a real
     # new sheet in that color, not scrap — see colors.part_effective_role.
+    # With a plinth the Bottom fits BETWEEN the sides (which run to the
+    # floor) instead of under them — see params.py's PLINTH_HEIGHT.
     add_panel(
-        "Bottom", "Bottom Panel", width, depth, t,
-        IDENTITY, App.Vector(0, 0, bottom_z),
+        "Bottom", "Bottom Panel", width - 2 * t if plinth else width, depth, t,
+        IDENTITY, App.Vector(t if plinth else 0, 0, bottom_z),
         color=colors.part_override_rgb("bottom"), visible=False,
         stock_source=resolve_stock(colors.part_effective_role("bottom")),
     )
@@ -130,15 +134,17 @@ def create_dresser(doc):
     # by themselves (no separate part). Each side is its own independent
     # role (part_roles.yaml) — e.g. an order item's own left_swatch: key
     # colors just the Left panel, leaving Right/Top/Bottom untouched.
+    side_z = 0 if plinth else bottom_z + t
+    side_length = bottom_z + t + side_height - side_z
     add_panel(
-        "Left", "Left Side Panel", side_height, depth, t,
-        ROT_Y90, App.Vector(0, 0, bottom_z + t),
+        "Left", "Left Side Panel", side_length, depth, t,
+        ROT_Y90, App.Vector(0, 0, side_z),
         color=colors.part_override_rgb("left"), visible=True,
         stock_source=resolve_stock(colors.part_effective_role("left")),
     )
     add_panel(
-        "Right", "Right Side Panel", side_height, depth, t,
-        ROT_Y90, App.Vector(width - t, 0, bottom_z + t),
+        "Right", "Right Side Panel", side_length, depth, t,
+        ROT_Y90, App.Vector(width - t, 0, side_z),
         color=colors.part_override_rgb("right"), visible=True,
         stock_source=resolve_stock(colors.part_effective_role("right")),
     )
@@ -150,6 +156,18 @@ def create_dresser(doc):
         ROT_X90, App.Vector(0, depth - t, bottom_z + t),
         color=colors.part_override_rgb("back"), visible=False,
         stock_source=resolve_stock(colors.part_effective_role("back")),
+    )
+
+    add_plinth(
+        add_panel, width, depth, t, plinth, params.PLINTH_SETBACK,
+        front_kwargs=dict(
+            color=colors.part_override_rgb("plinth"), visible=True,
+            stock_source=resolve_stock(colors.part_effective_role("plinth")),
+        ),
+        back_kwargs=dict(
+            color=colors.part_override_rgb("back"), visible=False,
+            stock_source=resolve_stock(colors.part_effective_role("back")),
+        ),
     )
 
     _add_top_brackets(add_panel, width, depth)
@@ -230,7 +248,7 @@ def _add_top_brackets(add_panel, width, depth):
     leg = params.BRACKET_LEG
     bw = params.BRACKET_WIDTH
     bt = params.BRACKET_THICKNESS
-    z_top = params.TOP_PANEL_Z_MIN  # Top panel's own underside
+    z_top = params.PLINTH_HEIGHT + params.TOP_PANEL_Z_MIN  # Top panel's own underside
     kwargs = dict(material="Metal", color=params.BRACKET_COLOR, visible=True, stock_source="new")
 
     def side_bracket(prefix, label, x_face, x_inward):

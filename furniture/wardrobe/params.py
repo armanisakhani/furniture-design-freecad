@@ -153,6 +153,16 @@ DOOR_RIGHT_X_MIN = DOOR_LEFT_X_MIN + DOOR_WIDTH + DOOR_GAP
 DOOR_HANDLE_HEIGHT = 160  # TBD: vertical handle length
 DOOR_HANDLE_EDGE_GAP = 40  # TBD: door's inner edge to the handle's own center line
 
+# --- Plinth (optional) ------------------------------------------------------
+# PLINTH_HEIGHT=0 (default): the Bottom panel sits on the floor, the sides
+# rest on it. >0 (mm, e.g. 70-100): the (bottom unit's) sides run to the
+# floor, the Bottom is raised that far and fits between them, and 2
+# vertical strips (front/back, core/plinth.py) close the gap under it.
+# Adds PLINTH_HEIGHT to the whole wardrobe's height; PLINTH_SETBACK
+# recesses the front strip (a toe-kick). Same idea as furniture/dresser.
+PLINTH_HEIGHT = int(os.environ.get("PLINTH_HEIGHT") or 0)
+PLINTH_SETBACK = int(os.environ.get("PLINTH_SETBACK") or 0)
+
 # --- Derived: one_piece heights ------------------------------------------
 # One continuous carcass: Bottom -> DRAWER_COUNT drawers -> Divider (inset,
 # closes the drawer section / floors the hanging compartment) -> hanging
@@ -160,15 +170,15 @@ DOOR_HANDLE_EDGE_GAP = 40  # TBD: door's inner edge to the handle's own center l
 # sides stop where the hanging compartment does; the Top panel then adds
 # its own thickness on top of that.
 ONE_PIECE_SIDE_HEIGHT = DRAWER_SECTION_HEIGHT + MDF_THICKNESS + HANGING_INTERIOR_HEIGHT
-ONE_PIECE_HEIGHT = MDF_THICKNESS + ONE_PIECE_SIDE_HEIGHT + MDF_THICKNESS
-ONE_PIECE_DIVIDER_Z_MIN = MDF_THICKNESS + DRAWER_SECTION_HEIGHT
-ONE_PIECE_TOP_PANEL_Z_MIN = MDF_THICKNESS + ONE_PIECE_SIDE_HEIGHT
+ONE_PIECE_HEIGHT = PLINTH_HEIGHT + MDF_THICKNESS + ONE_PIECE_SIDE_HEIGHT + MDF_THICKNESS
+ONE_PIECE_DIVIDER_Z_MIN = PLINTH_HEIGHT + MDF_THICKNESS + DRAWER_SECTION_HEIGHT
+ONE_PIECE_TOP_PANEL_Z_MIN = PLINTH_HEIGHT + MDF_THICKNESS + ONE_PIECE_SIDE_HEIGHT
 
 # --- Derived: two_piece heights -------------------------------------------
 # Bottom unit: furniture/dresser's own shape with TOP_PANEL_MODE="on_top".
 BOTTOM_UNIT_SIDE_HEIGHT = DRAWER_SECTION_HEIGHT
-BOTTOM_UNIT_HEIGHT = MDF_THICKNESS + BOTTOM_UNIT_SIDE_HEIGHT + MDF_THICKNESS
-BOTTOM_UNIT_TOP_PANEL_Z_MIN = MDF_THICKNESS + BOTTOM_UNIT_SIDE_HEIGHT
+BOTTOM_UNIT_HEIGHT = PLINTH_HEIGHT + MDF_THICKNESS + BOTTOM_UNIT_SIDE_HEIGHT + MDF_THICKNESS
+BOTTOM_UNIT_TOP_PANEL_Z_MIN = PLINTH_HEIGHT + MDF_THICKNESS + BOTTOM_UNIT_SIDE_HEIGHT
 
 # Hanging unit: a standalone box, Bottom (full) below + Top (on top, full
 # width) above, just with a rod instead of drawers. Z values below are

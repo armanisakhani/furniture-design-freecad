@@ -13,5 +13,6 @@ left: main       # Left Side Panel (dresser.py)
 right: main      # Right Side Panel
 top: main        # Top Panel
 bottom: reused   # Bottom Panel — hidden underside, cut from reclaimed stock by default
+plinth: main     # front plinth strip (only exists when PLINTH_HEIGHT > 0)
 back: reused     # Back Panel — hidden, assumed against a wall, cut from reclaimed stock by default
 mirror_frame: main   # optional mirror's frame rails/stiles

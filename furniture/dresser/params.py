@@ -229,6 +229,18 @@ DRAWER_DEPTH = DEPTH - 2 * MDF_THICKNESS - RAIL_BACK_CLEARANCE - DRAWER_FRONT_SE
 # (slide hardware).
 DRAWER_WIDTH = WIDTH - 2 * MDF_THICKNESS - 2 * RAIL_CLEARANCE
 
+# --- Plinth (optional) ------------------------------------------------------
+# PLINTH_HEIGHT=0 (default): the Bottom panel sits on the floor and the
+# sides rest on it (see below). PLINTH_HEIGHT>0 (mm, e.g. 70-100): the
+# sides run to the floor instead, the Bottom is raised that far and fits
+# between them, and 2 vertical strips (front/back, core/plinth.py) close
+# the gap under it — keeps the Bottom off the floor's damp and lets the
+# sides' own bottom edges carry the weight and take leveling feet.
+# Adds PLINTH_HEIGHT to the dresser's overall HEIGHT. PLINTH_SETBACK
+# recesses the front strip (a toe-kick) instead of flush with the front.
+PLINTH_HEIGHT = int(os.environ.get("PLINTH_HEIGHT") or 0)
+PLINTH_SETBACK = int(os.environ.get("PLINTH_SETBACK") or 0)
+
 # --- Base / feet -----------------------------------------------------------
 # No raised base/plinth at all (per references/reference-base-example.jpeg — there's
 # no toe-kick board or leg frame in that reference, just small plastic
@@ -296,6 +308,8 @@ else:  # "on_top"
     TOP_PANEL_Z_MIN = MDF_THICKNESS + SIDE_HEIGHT
     HEIGHT = TOP_PANEL_Z_MIN + MDF_THICKNESS
     TOP_DRAWER_FACE_EXTRA_HEIGHT = 0
+
+HEIGHT += PLINTH_HEIGHT  # whole dresser, floor to top
 
 # --- Material / appearance -----------------------------------------------
 # Same visible/stock_source convention as furniture/bed (see
